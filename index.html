@@ -3,35 +3,52 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RimWorld — все команды и цены</title>
+  <title>RimWorld — команды и цены</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
       background: #1e1e2f;
       color: #e0e0e0;
       padding: 20px;
     }
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
+    .container { max-width: 1500px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 10px; font-weight: 300; letter-spacing: 1px; }
+    .subtitle { text-align: center; color: #aaa; margin-bottom: 20px; font-size: 0.95rem; }
+
+    /* Вкладки */
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 25px;
+      border-bottom: 2px solid #3a3a52;
+      flex-wrap: wrap;
     }
-    h1 {
-      text-align: center;
-      margin-bottom: 10px;
-      font-weight: 300;
-      letter-spacing: 1px;
-    }
-    .subtitle {
-      text-align: center;
+    .tab-btn {
+      background: #2a2a3e;
+      border: none;
       color: #aaa;
-      margin-bottom: 30px;
-      font-size: 0.95rem;
+      padding: 12px 28px;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      transition: 0.2s;
+      font-weight: 600;
+      margin-right: 2px;
     }
+    .tab-btn:hover { background: #3a3a5a; color: #eee; }
+    .tab-btn.active {
+      background: #3a5a7a;
+      color: #fff;
+      border-bottom: 3px solid #7bc97b;
+    }
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+    .tab-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0.3; } to { opacity: 1; } }
+
     .filters {
       display: flex;
       flex-wrap: wrap;
@@ -50,32 +67,28 @@
       padding: 8px 14px;
       border-radius: 6px;
       font-size: 0.95rem;
-      min-width: 180px;
+      min-width: 150px;
     }
-    .filters input::placeholder {
-      color: #888;
-    }
-    .filters select {
-      cursor: pointer;
-    }
+    .filters input::placeholder { color: #888; }
+    .filters select { cursor: pointer; }
     .filters label {
       display: flex;
       align-items: center;
       gap: 6px;
       font-size: 0.95rem;
     }
-    .stats {
-      font-size: 0.9rem;
-      color: #aaa;
-      margin-left: auto;
+    .stats { font-size: 0.9rem; color: #aaa; margin-left: auto; }
+    .table-wrapper {
+      overflow-x: auto;
+      max-height: 70vh;
+      border-radius: 10px;
+      background: #1e1e30;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
     table {
       width: 100%;
       border-collapse: collapse;
       background: #252538;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
     th {
       background: #33334a;
@@ -89,18 +102,15 @@
       top: 0;
       z-index: 10;
       border-bottom: 2px solid #4a4a6a;
+      white-space: nowrap;
     }
-    th:hover {
-      background: #3d3d5a;
-    }
+    th:hover { background: #3d3d5a; }
     td {
       padding: 10px 10px;
       border-bottom: 1px solid #3a3a52;
       vertical-align: middle;
     }
-    tr:hover td {
-      background: #2e2e48;
-    }
+    tr:hover td { background: #2e2e48; }
     .karma-badge {
       display: inline-block;
       padding: 3px 12px;
@@ -124,229 +134,396 @@
       display: inline-block;
       white-space: nowrap;
     }
-    .mod-source {
+    .mod-source { font-size: 0.8rem; color: #aaa; }
+    .price { font-weight: 600; color: #f0e68c; }
+    .copy-btn {
+      background: #3a5a7a;
+      border: none;
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
       font-size: 0.8rem;
-      color: #aaa;
+      transition: 0.2s;
+      white-space: nowrap;
     }
-    .price {
+    .copy-btn:hover { background: #4a7a9a; }
+    .copy-btn.copied { background: #2d7d3a; }
+    .loading { text-align: center; padding: 50px; font-size: 1.2rem; color: #aaa; }
+    .no-results { text-align: center; padding: 30px; color: #aaa; }
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2d7d3a;
+      color: #fff;
+      padding: 10px 25px;
+      border-radius: 30px;
       font-weight: 600;
-      color: #f0e68c;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 999;
     }
-    .table-wrapper {
-      overflow-x: auto;
-      max-height: 75vh;
-      border-radius: 10px;
-      background: #1e1e30;
-    }
-    .loading {
-      text-align: center;
-      padding: 50px;
-      font-size: 1.2rem;
-      color: #aaa;
-    }
-    .no-results {
-      text-align: center;
-      padding: 30px;
-      color: #aaa;
-    }
+    .toast.show { opacity: 1; }
+    .error-msg { color: #f77; text-align: center; padding: 30px; }
     @media (max-width: 768px) {
-      .filters {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .filters input, .filters select {
-        min-width: unset;
-        width: 100%;
-      }
-      .stats {
-        margin-left: 0;
-        text-align: center;
-      }
-      th, td {
-        padding: 8px 6px;
-        font-size: 0.85rem;
-      }
+      .filters { flex-direction: column; align-items: stretch; }
+      .filters input, .filters select { min-width: unset; width: 100%; }
+      .stats { margin-left: 0; text-align: center; }
+      th, td { padding: 6px 4px; font-size: 0.75rem; }
+      .copy-btn { padding: 2px 8px; font-size: 0.7rem; }
+      .tab-btn { padding: 10px 16px; font-size: 0.9rem; }
     }
   </style>
 </head>
 <body>
 <div class="container">
-  <h1>🎮 RimWorld · Команды и события</h1>
-  <p class="subtitle">Интерактивный справочник всех доступных инцидентов для вашего режима дуэли</p>
+  <h1>🎮 RimWorld · Команды и цены</h1>
+  <p class="subtitle">Нажмите на кнопку, чтобы скопировать команду для чата</p>
 
-  <div class="filters">
-    <input type="text" id="searchInput" placeholder="🔍 Поиск по названию, категории..." />
-    <select id="karmaFilter">
-      <option value="all">Все типы кармы</option>
-      <option value="Good">✅ Good</option>
-      <option value="Neutral">⚪ Neutral</option>
-      <option value="Bad">⚠️ Bad</option>
-      <option value="Doom">💀 Doom</option>
-    </select>
-    <select id="enabledFilter">
-      <option value="all">Все статусы</option>
-      <option value="true">✅ Включено</option>
-      <option value="false">❌ Отключено</option>
-    </select>
-    <label>
-      <input type="checkbox" id="showOnlyRaids" /> Только рейды
-    </label>
-    <span class="stats" id="stats">Загрузка...</span>
+  <!-- Вкладки -->
+  <div class="tabs" id="tabHeaders">
+    <button class="tab-btn active" data-tab="events">⚔️ События</button>
+    <button class="tab-btn" data-tab="store">🛒 Магазин</button>
+    <button class="tab-btn" data-tab="weather">🌦️ Погода</button>
   </div>
 
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th data-sort="label">Название</th>
-          <th data-sort="baseCost" style="text-align:right;">Цена</th>
-          <th data-sort="karmaType">Карма</th>
-          <th data-sort="categoryName">Категория</th>
-          <th data-sort="modSource">Источник</th>
-          <th data-sort="enabled">Статус</th>
-          <th data-sort="isRaid">Рейд</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        <tr><td colspan="7" class="loading">⏳ Загрузка данных...</td></tr>
-      </tbody>
-    </table>
+  <!-- Контент вкладок -->
+  <div id="tab-events" class="tab-content active">
+    <div class="filters" id="filters-events">
+      <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="events" />
+      <select class="karma-filter" data-tab="events">
+        <option value="all">Все типы кармы</option>
+        <option value="Good">✅ Good</option>
+        <option value="Neutral">⚪ Neutral</option>
+        <option value="Bad">⚠️ Bad</option>
+        <option value="Doom">💀 Doom</option>
+      </select>
+      <select class="enabled-filter" data-tab="events">
+        <option value="all">Все статусы</option>
+        <option value="true">✅ Включено</option>
+        <option value="false">❌ Отключено</option>
+      </select>
+      <label><input type="checkbox" class="only-raids" data-tab="events" /> Только рейды</label>
+      <span class="stats" id="stats-events">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="label" data-tab="events">Название</th>
+          <th data-sort="baseCost" style="text-align:right;" data-tab="events">Цена</th>
+          <th data-sort="karmaType" data-tab="events">Карма</th>
+          <th data-sort="categoryName" data-tab="events">Категория</th>
+          <th data-sort="modSource" data-tab="events">Источник</th>
+          <th data-sort="enabled" data-tab="events">Статус</th>
+          <th data-sort="isRaid" data-tab="events">Рейд</th>
+          <th style="cursor:default;">Команда</th>
+        </tr></thead>
+        <tbody id="body-events"><tr><td colspan="8" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tab-store" class="tab-content">
+    <div class="filters" id="filters-store">
+      <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="store" />
+      <select class="karma-filter" data-tab="store">
+        <option value="all">Все типы кармы</option>
+        <option value="Good">✅ Good</option>
+        <option value="Neutral">⚪ Neutral</option>
+        <option value="Bad">⚠️ Bad</option>
+      </select>
+      <span class="stats" id="stats-store">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="label" data-tab="store">Название</th>
+          <th data-sort="baseCost" style="text-align:right;" data-tab="store">Цена</th>
+          <th data-sort="karmaType" data-tab="store">Карма</th>
+          <th data-sort="category" data-tab="store">Категория</th>
+          <th style="cursor:default;">Команда</th>
+        </tr></thead>
+        <tbody id="body-store"><tr><td colspan="5" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tab-weather" class="tab-content">
+    <div class="filters" id="filters-weather">
+      <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="weather" />
+      <span class="stats" id="stats-weather">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="label" data-tab="weather">Название погоды</th>
+          <th data-sort="command" data-tab="weather">Команда</th>
+          <th style="cursor:default;">Скопировать</th>
+        </tr></thead>
+        <tbody id="body-weather"><tr><td colspan="3" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
+<div id="toast" class="toast">📋 Скопировано!</div>
+
 <script>
   (function() {
-    // --- данные ---
-    let incidents = [];
-    let filteredIncidents = [];
-    const tbody = document.getElementById('tableBody');
-    const statsSpan = document.getElementById('stats');
-
-    // --- загрузка JSON ---
-    async function loadData() {
-      try {
-        const response = await fetch('incidents.json');
-        if (!response.ok) throw new Error('Не удалось загрузить incidents.json');
-        const data = await response.json();
-        // data — это объект, ключи — DefName
-        incidents = Object.values(data).map(item => ({
-          ...item,
-          // добавляем удобные булевы поля для фильтров
-          isRaid: item.IsRaidIncident || false,
-          isEnabled: item.Enabled || false,
-        }));
-        filteredIncidents = [...incidents];
-        renderTable();
-        updateStats();
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="7" style="color:#f77;">❌ Ошибка загрузки: ${err.message}</td></tr>`;
-        statsSpan.textContent = 'Ошибка';
-        console.error(err);
-      }
+    // ---------- утилиты ----------
+    function showToast(text = '📋 Скопировано!') {
+      const toast = document.getElementById('toast');
+      toast.textContent = text;
+      toast.classList.add('show');
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => toast.classList.remove('show'), 2000);
     }
 
-    // --- рендеринг ---
-    function renderTable() {
-      if (filteredIncidents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="no-results">😕 Ничего не найдено</td></tr>`;
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 Скопировано: ' + text);
+      }).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('📋 Скопировано: ' + text);
+      });
+    }
+
+    // ---------- загрузка и рендеринг ----------
+    const dataSources = {
+      events: { file: 'incidents.json', data: [], filtered: [] },
+      store: { file: 'store.json', data: [], filtered: [] },
+      weather: { file: 'weather.json', data: [], filtered: [] }
+    };
+
+    function renderTable(tab) {
+      const source = dataSources[tab];
+      const tbody = document.getElementById(`body-${tab}`);
+      const statsSpan = document.getElementById(`stats-${tab}`);
+      const items = source.filtered;
+
+      if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="no-results">😕 Нет данных или ничего не найдено</td></tr>`;
+        statsSpan.textContent = `0 элементов`;
         return;
       }
+
       let html = '';
-      filteredIncidents.forEach(inc => {
-        const karmaClass = `karma-${inc.KarmaType || 'Neutral'}`;
-        const enabledClass = inc.Enabled ? 'enabled-true' : 'enabled-false';
-        const enabledText = inc.Enabled ? '✅ Да' : '❌ Нет';
-        const raidIcon = inc.IsRaidIncident ? '⚔️' : '—';
-        html += `<tr>
-          <td><strong>${inc.Label || inc.DefName}</strong></td>
-          <td style="text-align:right;"><span class="price">${inc.BaseCost ?? 0}</span></td>
-          <td><span class="karma-badge ${karmaClass}">${inc.KarmaType || 'Neutral'}</span></td>
-          <td><span class="category-badge">${inc.CategoryName || '—'}</span></td>
-          <td class="mod-source">${inc.ModSource || 'Core'}</td>
-          <td class="${enabledClass}">${enabledText}</td>
-          <td>${raidIcon}</td>
-        </tr>`;
-      });
+      if (tab === 'events') {
+        items.forEach(inc => {
+          const karmaClass = `karma-${inc.KarmaType || 'Neutral'}`;
+          const enabledClass = inc.Enabled ? 'enabled-true' : 'enabled-false';
+          const enabledText = inc.Enabled ? '✅ Да' : '❌ Нет';
+          const raidIcon = inc.IsRaidIncident ? '⚔️' : '—';
+          const command = `!buy ${inc.DefName}`;
+          html += `<tr>
+            <td><strong>${inc.Label || inc.DefName}</strong></td>
+            <td style="text-align:right;"><span class="price">${inc.BaseCost ?? 0}</span></td>
+            <td><span class="karma-badge ${karmaClass}">${inc.KarmaType || 'Neutral'}</span></td>
+            <td><span class="category-badge">${inc.CategoryName || '—'}</span></td>
+            <td class="mod-source">${inc.ModSource || 'Core'}</td>
+            <td class="${enabledClass}">${enabledText}</td>
+            <td>${raidIcon}</td>
+            <td><button class="copy-btn" data-command="${command}">📋 Копировать</button></td>
+          </tr>`;
+        });
+      } else if (tab === 'store') {
+        items.forEach(item => {
+          const karmaClass = `karma-${item.KarmaType || 'Neutral'}`;
+          const command = `!buy ${item.DefName}`;
+          html += `<tr>
+            <td><strong>${item.Label || item.DefName}</strong></td>
+            <td style="text-align:right;"><span class="price">${item.BaseCost ?? 0}</span></td>
+            <td><span class="karma-badge ${karmaClass}">${item.KarmaType || 'Neutral'}</span></td>
+            <td><span class="category-badge">${item.Category || '—'}</span></td>
+            <td><button class="copy-btn" data-command="${command}">📋 Копировать</button></td>
+          </tr>`;
+        });
+      } else if (tab === 'weather') {
+        items.forEach(w => {
+          const command = `!weather ${w.DefName || w.Command || w.label}`;
+          html += `<tr>
+            <td><strong>${w.Label || w.DefName || w.label}</strong></td>
+            <td><code style="background:#2a2a3e;padding:2px 8px;border-radius:4px;">${command}</code></td>
+            <td><button class="copy-btn" data-command="${command}">📋 Копировать</button></td>
+          </tr>`;
+        });
+      }
+
       tbody.innerHTML = html;
+      statsSpan.textContent = `📊 ${items.length} элементов`;
+
+      // обработчики кнопок
+      document.querySelectorAll(`#body-${tab} .copy-btn`).forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const command = this.dataset.command;
+          copyToClipboard(command);
+          this.classList.add('copied');
+          setTimeout(() => this.classList.remove('copied'), 1000);
+        });
+      });
     }
 
-    function updateStats() {
-      statsSpan.textContent = `📊 ${filteredIncidents.length} из ${incidents.length} событий`;
+    function updateStats(tab) {
+      const source = dataSources[tab];
+      const statsSpan = document.getElementById(`stats-${tab}`);
+      if (source.data.length === 0) {
+        statsSpan.textContent = 'Нет данных';
+      } else {
+        statsSpan.textContent = `📊 ${source.filtered.length} из ${source.data.length}`;
+      }
     }
 
-    // --- фильтры ---
-    function applyFilters() {
-      const search = document.getElementById('searchInput').value.toLowerCase().trim();
-      const karma = document.getElementById('karmaFilter').value;
-      const enabled = document.getElementById('enabledFilter').value;
-      const onlyRaids = document.getElementById('showOnlyRaids').checked;
+    function applyFilters(tab) {
+      const source = dataSources[tab];
+      const searchInput = document.querySelector(`#filters-${tab} .search-input`);
+      const karmaFilter = document.querySelector(`#filters-${tab} .karma-filter`);
+      const enabledFilter = document.querySelector(`#filters-${tab} .enabled-filter`);
+      const onlyRaidsCheck = document.querySelector(`#filters-${tab} .only-raids`);
 
-      filteredIncidents = incidents.filter(inc => {
-        // поиск
+      const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      const karma = karmaFilter ? karmaFilter.value : 'all';
+      const enabled = enabledFilter ? enabledFilter.value : 'all';
+      const onlyRaids = onlyRaidsCheck ? onlyRaidsCheck.checked : false;
+
+      source.filtered = source.data.filter(item => {
         if (search) {
-          const label = (inc.Label || '').toLowerCase();
-          const def = (inc.DefName || '').toLowerCase();
-          const cat = (inc.CategoryName || '').toLowerCase();
-          const mod = (inc.ModSource || '').toLowerCase();
+          const label = (item.Label || '').toLowerCase();
+          const def = (item.DefName || '').toLowerCase();
+          const cat = (item.CategoryName || item.Category || '').toLowerCase();
+          const mod = (item.ModSource || '').toLowerCase();
           if (!label.includes(search) && !def.includes(search) && !cat.includes(search) && !mod.includes(search)) {
             return false;
           }
         }
-        // карма
-        if (karma !== 'all' && inc.KarmaType !== karma) return false;
-        // статус включения
+        if (karma !== 'all' && item.KarmaType !== karma) return false;
         if (enabled !== 'all') {
-          const isEnabled = inc.Enabled || false;
+          const isEnabled = item.Enabled || false;
           if (enabled === 'true' && !isEnabled) return false;
           if (enabled === 'false' && isEnabled) return false;
         }
-        // только рейды
-        if (onlyRaids && !inc.IsRaidIncident) return false;
+        if (onlyRaids && !item.IsRaidIncident) return false;
         return true;
       });
 
-      renderTable();
-      updateStats();
+      renderTable(tab);
     }
 
-    // --- сортировка по заголовкам ---
-    let sortKey = 'label';
-    let sortAsc = true;
-
-    function sortTable(key) {
-      if (sortKey === key) {
-        sortAsc = !sortAsc;
-      } else {
-        sortKey = key;
-        sortAsc = true;
-      }
-      filteredIncidents.sort((a, b) => {
-        let valA = a[key] ?? '';
-        let valB = b[key] ?? '';
-        if (typeof valA === 'string') valA = valA.toLowerCase();
-        if (typeof valB === 'string') valB = valB.toLowerCase();
-        if (valA < valB) return sortAsc ? -1 : 1;
-        if (valA > valB) return sortAsc ? 1 : -1;
-        return 0;
-      });
-      renderTable();
+    function loadData(tab) {
+      const source = dataSources[tab];
+      const url = source.file;
+      fetch(url)
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          // data может быть объектом или массивом
+          if (Array.isArray(data)) {
+            source.data = data;
+          } else if (typeof data === 'object' && data !== null) {
+            source.data = Object.values(data);
+          } else {
+            source.data = [];
+          }
+          // добавим служебные поля
+          source.data = source.data.map(item => ({
+            ...item,
+            isRaid: item.IsRaidIncident || false,
+            isEnabled: item.Enabled || false,
+          }));
+          source.filtered = [...source.data];
+          renderTable(tab);
+          updateStats(tab);
+        })
+        .catch(err => {
+          console.warn(`Ошибка загрузки ${url}:`, err);
+          const tbody = document.getElementById(`body-${tab}`);
+          tbody.innerHTML = `<tr><td colspan="8" class="error-msg">❌ Не удалось загрузить ${url}.<br>Убедитесь, что файл существует в репозитории.</td></tr>`;
+          const statsSpan = document.getElementById(`stats-${tab}`);
+          statsSpan.textContent = 'Ошибка';
+        });
     }
 
-    // --- обработчики событий ---
-    document.getElementById('searchInput').addEventListener('input', applyFilters);
-    document.getElementById('karmaFilter').addEventListener('change', applyFilters);
-    document.getElementById('enabledFilter').addEventListener('change', applyFilters);
-    document.getElementById('showOnlyRaids').addEventListener('change', applyFilters);
-
-    document.querySelectorAll('th[data-sort]').forEach(th => {
-      th.addEventListener('click', () => {
-        const key = th.dataset.sort;
-        sortTable(key);
+    // ---------- переключение вкладок ----------
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const tab = this.dataset.tab;
+        // скрыть все
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        this.classList.add('active');
+        // загрузить данные, если ещё не загружены
+        const source = dataSources[tab];
+        if (source.data.length === 0 && source.filtered.length === 0) {
+          loadData(tab);
+        } else {
+          // перерисовать (на случай если фильтры поменялись)
+          renderTable(tab);
+          updateStats(tab);
+        }
       });
     });
 
-    // --- старт ---
-    loadData();
+    // ---------- подписка на фильтры ----------
+    document.querySelectorAll('.search-input, .karma-filter, .enabled-filter, .only-raids').forEach(el => {
+      el.addEventListener('input', function() {
+        const tab = this.dataset.tab;
+        applyFilters(tab);
+      });
+      el.addEventListener('change', function() {
+        const tab = this.dataset.tab;
+        applyFilters(tab);
+      });
+    });
+
+    // ---------- сортировка ----------
+    document.querySelectorAll('th[data-sort]').forEach(th => {
+      th.addEventListener('click', function() {
+        const tab = this.dataset.tab;
+        const key = this.dataset.sort;
+        const source = dataSources[tab];
+        if (!source.filtered.length) return;
+        // определяем направление
+        const currentSort = source._sortKey;
+        const currentAsc = source._sortAsc;
+        if (currentSort === key) {
+          source._sortAsc = !currentAsc;
+        } else {
+          source._sortKey = key;
+          source._sortAsc = true;
+        }
+        const sortKey = source._sortKey;
+        const asc = source._sortAsc;
+        source.filtered.sort((a, b) => {
+          let valA = a[sortKey] ?? '';
+          let valB = b[sortKey] ?? '';
+          if (typeof valA === 'string') valA = valA.toLowerCase();
+          if (typeof valB === 'string') valB = valB.toLowerCase();
+          if (valA < valB) return asc ? -1 : 1;
+          if (valA > valB) return asc ? 1 : -1;
+          return 0;
+        });
+        renderTable(tab);
+      });
+    });
+
+    // ---------- инициализация: загружаем первую вкладку (events) ----------
+    loadData('events');
+
+    // для store и weather загрузим только при переключении (см. выше)
+    // но можно и сразу попробовать загрузить, чтобы файлы были кешированы
+    // но оставим ленивую загрузку.
   })();
 </script>
 </body>
