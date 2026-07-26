@@ -64,7 +64,6 @@
     .balance-panel button.danger { background: #7a4a3a; }
     .balance-panel button.danger:hover { background: #9a5a4a; }
     .balance-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .balance-actions .hint { font-size: 0.8rem; color: #888; margin-left: 5px; }
 
     .tabs {
       display: flex;
@@ -222,6 +221,18 @@
     .toast.show { opacity: 1; }
     .error-msg { color: #f77; text-align: center; padding: 30px; }
     .balance-panel .coin-icon { font-size: 1.2rem; margin-right: 4px; }
+    .permission-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: #3a3a5a;
+      color: #ccc;
+    }
+    .permission-everyone { background: #2d7d3a; color: #c8f0c0; }
+    .permission-moderator { background: #b85a2a; color: #f5d0b0; }
+    .permission-streamer { background: #7a4a9a; color: #e0c0f0; }
     @media (max-width: 768px) {
       .filters { flex-direction: column; align-items: stretch; }
       .filters input, .filters select { min-width: unset; width: 100%; }
@@ -274,6 +285,7 @@
     <button class="tab-btn" data-tab="store">🛒 Магазин</button>
     <button class="tab-btn" data-tab="weather">🌦️ Погода</button>
     <button class="tab-btn" data-tab="traits">🧬 Черты</button>
+    <button class="tab-btn" data-tab="commands">📖 Команды</button>
   </div>
 
   <!-- ============ Вкладка События ============ -->
@@ -396,6 +408,38 @@
       </table>
     </div>
   </div>
+
+  <!-- ============ Вкладка Команды ============ -->
+  <div id="tab-commands" class="tab-content">
+    <div class="filters" id="filters-commands">
+      <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="commands" />
+      <select class="permission-filter" data-tab="commands">
+        <option value="all">Все разрешения</option>
+        <option value="everyone">👥 Все</option>
+        <option value="moderator">🛡️ Модератор</option>
+        <option value="streamer">🎥 Стример</option>
+      </select>
+      <select class="enabled-filter" data-tab="commands">
+        <option value="all">Все статусы</option>
+        <option value="true">✅ Включено</option>
+        <option value="false">❌ Отключено</option>
+      </select>
+      <span class="stats" id="stats-commands">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="label" data-tab="commands">Команда</th>
+          <th data-sort="commandDescription" data-tab="commands">Описание</th>
+          <th data-sort="permissionLevel" data-tab="commands">Разрешение</th>
+          <th data-sort="enabled" data-tab="commands">Статус</th>
+          <th data-sort="cooldownSeconds" style="text-align:right;" data-tab="commands">Кулдаун (с)</th>
+          <th style="cursor:default;">Копировать</th>
+        </tr></thead>
+        <tbody id="body-commands"><tr><td colspan="6" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <div id="toast" class="toast">📋 Скопировано!</div>
@@ -468,7 +512,7 @@
 
     // ---------- Применение фильтров ко всем вкладкам ----------
     function applyFiltersToAllTabs() {
-      ['events', 'store', 'weather', 'traits'].forEach(tab => {
+      ['events', 'store', 'weather', 'traits', 'commands'].forEach(tab => {
         applyFilters(tab);
       });
     }
@@ -501,7 +545,8 @@
       events: { file: 'incidents.json', data: [], filtered: [] },
       store: { file: 'store.json', data: [], filtered: [] },
       weather: { file: 'weather.json', data: [], filtered: [] },
-      traits: { file: 'traits.json', data: [], filtered: [] }
+      traits: { file: 'traits.json', data: [], filtered: [] },
+      commands: { file: 'commands.json', data: [], filtered: [] }
     };
 
     // ---------- рендеринг таблиц ----------
@@ -601,6 +646,28 @@
             </td>
           </tr>`;
         });
+      } else if (tab === 'commands') {
+        items.forEach(cmd => {
+          const cmdName = cmd.DefName || Object.keys(cmd)[0] || 'команда';
+          const label = cmd.Label || cmdName;
+          const description = cmd.CommandDescription || '—';
+          const permission = cmd.PermissionLevel || 'everyone';
+          const permClass = `permission-${permission}`;
+          const enabled = cmd.Enabled !== undefined ? cmd.Enabled : true;
+          const enabledClass = enabled ? 'enabled-true' : 'enabled-false';
+          const enabledText = enabled ? '✅ Да' : '❌ Нет';
+          const cooldown = cmd.CooldownSeconds ?? 0;
+          const alias = cmd.CommandAlias || '';
+          const commandText = alias ? `!${alias}` : `!${cmdName}`;
+          html += `<tr>
+            <td><strong>${label}</strong></td>
+            <td style="font-size:0.85rem; color:#c0c0c0;">${description}</td>
+            <td><span class="permission-badge ${permClass}">${permission}</span></td>
+            <td class="${enabledClass}">${enabledText}</td>
+            <td style="text-align:right;">${cooldown}</td>
+            <td><button class="copy-btn" data-command="${commandText}">📋 Копировать</button></td>
+          </tr>`;
+        });
       }
 
       tbody.innerHTML = html;
@@ -651,6 +718,7 @@
       const onlyRaidsCheck = container.querySelector('.only-raids');
       const onlyAffordableCheck = container.querySelector('.only-affordable');
       const modFilter = container.querySelector('.mod-filter');
+      const permissionFilter = container.querySelector('.permission-filter');
 
       const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
       const karma = karmaFilter ? karmaFilter.value : 'all';
@@ -658,6 +726,7 @@
       const onlyRaids = onlyRaidsCheck ? onlyRaidsCheck.checked : false;
       const onlyAffordable = onlyAffordableCheck ? onlyAffordableCheck.checked : false;
       const mod = modFilter ? modFilter.value : 'all';
+      const permission = permissionFilter ? permissionFilter.value : 'all';
 
       const balance = getCurrentBalance();
 
@@ -667,7 +736,8 @@
           const def = (item.DefName || '').toLowerCase();
           const cat = (item.CategoryName || item.Category || '').toLowerCase();
           const modSrc = (item.ModSource || item.Mod || '').toLowerCase();
-          if (!label.includes(search) && !def.includes(search) && !cat.includes(search) && !modSrc.includes(search)) {
+          const desc = (item.CommandDescription || '').toLowerCase();
+          if (!label.includes(search) && !def.includes(search) && !cat.includes(search) && !modSrc.includes(search) && !desc.includes(search)) {
             return false;
           }
         }
@@ -679,6 +749,7 @@
         }
         if (onlyRaids && !item.IsRaidIncident) return false;
         if (mod !== 'all' && (item.ModSource || 'Core') !== mod) return false;
+        if (permission !== 'all' && (item.PermissionLevel || 'everyone') !== permission) return false;
         if (onlyAffordable) {
           let price = 0;
           if (tab === 'events') price = item.BaseCost ?? 0;
@@ -769,7 +840,7 @@
     });
 
     // ---------- подписка на фильтры ----------
-    document.querySelectorAll('.search-input, .karma-filter, .enabled-filter, .only-raids, .only-affordable, .mod-filter').forEach(el => {
+    document.querySelectorAll('.search-input, .karma-filter, .enabled-filter, .only-raids, .only-affordable, .mod-filter, .permission-filter').forEach(el => {
       const eventType = (el.tagName === 'INPUT' && el.type === 'checkbox') ? 'change' : 'input';
       el.addEventListener(eventType, function() {
         const tab = this.dataset.tab;
