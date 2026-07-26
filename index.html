@@ -16,7 +16,6 @@
     h1 { text-align: center; margin-bottom: 5px; font-weight: 300; letter-spacing: 1px; }
     .subtitle { text-align: center; color: #aaa; margin-bottom: 20px; font-size: 0.95rem; }
 
-    /* Панель баланса */
     .balance-panel {
       background: #2a2a3e;
       border-radius: 12px;
@@ -345,16 +344,25 @@
   <div id="tab-weather" class="tab-content">
     <div class="filters" id="filters-weather">
       <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="weather" />
+      <select class="karma-filter" data-tab="weather">
+        <option value="all">Все типы кармы</option>
+        <option value="Good">✅ Good</option>
+        <option value="Neutral">⚪ Neutral</option>
+        <option value="Bad">⚠️ Bad</option>
+        <option value="Doom">💀 Doom</option>
+      </select>
+      <label><input type="checkbox" class="only-affordable" data-tab="weather" /> Только доступные</label>
       <span class="stats" id="stats-weather">Загрузка...</span>
     </div>
     <div class="table-wrapper">
       <table>
         <thead><tr>
-          <th data-sort="label" data-tab="weather">Название погоды</th>
-          <th data-sort="command" data-tab="weather">Команда</th>
-          <th style="cursor:default;">Скопировать</th>
+          <th data-sort="label" data-tab="weather">Название</th>
+          <th data-sort="baseCost" style="text-align:right;" data-tab="weather">Цена</th>
+          <th data-sort="karmaType" data-tab="weather">Карма</th>
+          <th style="cursor:default;">Купить</th>
         </tr></thead>
-        <tbody id="body-weather"><tr><td colspan="3" class="loading">⏳ Загрузка...</td></tr></tbody>
+        <tbody id="body-weather"><tr><td colspan="4" class="loading">⏳ Загрузка...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -403,7 +411,6 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          // убедимся, что есть оба игрока
           if (!parsed.player1) parsed.player1 = { balance: 0, start: 0, rate: 30 };
           if (!parsed.player2) parsed.player2 = { balance: 0, start: 0, rate: 30 };
           return parsed;
@@ -433,7 +440,7 @@
       balanceData[player].balance = Math.max(0, Math.round(newBalance));
       saveBalanceData();
       updateBalanceDisplay();
-      applyFiltersToAllTabs(); // обновить фильтры доступности
+      applyFiltersToAllTabs();
     }
 
     function updateBalanceDisplay() {
@@ -456,7 +463,7 @@
           updateBalanceDisplay();
           applyFiltersToAllTabs();
         }
-      }, 60000); // каждую минуту
+      }, 60000);
     }
 
     // ---------- Применение фильтров ко всем вкладкам ----------
@@ -557,11 +564,19 @@
         });
       } else if (tab === 'weather') {
         items.forEach(w => {
+          const price = w.BaseCost ?? 0;
+          const canAfford = balance >= price;
+          const karma = w.KarmaType || 'Neutral';
+          const karmaClass = `karma-${karma}`;
           const command = `!weather ${w.DefName || w.Command || w.label}`;
           html += `<tr>
             <td><strong>${w.Label || w.DefName || w.label}</strong></td>
-            <td><code style="background:#2a2a3e;padding:2px 8px;border-radius:4px;">${command}</code></td>
-            <td><button class="copy-btn" data-command="${command}">📋 Копировать</button></td>
+            <td style="text-align:right;"><span class="price">${price}</span></td>
+            <td><span class="karma-badge ${karmaClass}">${karma}</span></td>
+            <td>
+              <button class="copy-btn buy-btn" data-command="${command}" data-price="${price}" ${canAfford ? '' : 'disabled'}>💰 Купить</button>
+              <button class="copy-btn" data-command="${command}">📋 Копировать</button>
+            </td>
           </tr>`;
         });
       } else if (tab === 'traits') {
@@ -597,22 +612,17 @@
           e.stopPropagation();
           const command = this.dataset.command;
           const price = parseFloat(this.dataset.price);
-          // если это кнопка "Купить" (buy-btn) и цена числовая и не disabled
           if (this.classList.contains('buy-btn') && !isNaN(price) && !this.disabled) {
             const currentBalance = getCurrentBalance();
             if (currentBalance >= price) {
               setCurrentBalance(currentBalance - price);
-              // копируем команду
               copyToClipboard(command);
-              // перерисовываем таблицу, чтобы обновить доступность кнопок
               renderTable(tab);
-              // также обновить фильтры, если включен "только доступные"
               applyFilters(tab);
             } else {
               showToast('❌ Недостаточно очков!');
             }
           } else if (!this.classList.contains('buy-btn')) {
-            // обычная кнопка копирования
             copyToClipboard(command);
             this.classList.add('copied');
             setTimeout(() => this.classList.remove('copied'), 1000);
@@ -652,7 +662,6 @@
       const balance = getCurrentBalance();
 
       source.filtered = source.data.filter(item => {
-        // поиск
         if (search) {
           const label = (item.Label || item.CustomName || item.Name || '').toLowerCase();
           const def = (item.DefName || '').toLowerCase();
@@ -662,31 +671,26 @@
             return false;
           }
         }
-        // карма
         if (karma !== 'all' && (item.KarmaType || 'Neutral') !== karma) return false;
-        // статус включения (только для событий, у магазина может не быть Enabled, тогда считаем true)
         if (enabled !== 'all') {
           const isEnabled = item.Enabled !== undefined ? item.Enabled : true;
           if (enabled === 'true' && !isEnabled) return false;
           if (enabled === 'false' && isEnabled) return false;
         }
-        // только рейды (только для событий)
         if (onlyRaids && !item.IsRaidIncident) return false;
-        // фильтр по источнику (для черт)
         if (mod !== 'all' && (item.ModSource || 'Core') !== mod) return false;
-        // только доступные по балансу
         if (onlyAffordable) {
           let price = 0;
           if (tab === 'events') price = item.BaseCost ?? 0;
           else if (tab === 'store') price = item.BaseCost ?? item.BasePrice ?? 0;
+          else if (tab === 'weather') price = item.BaseCost ?? 0;
           else if (tab === 'traits') {
-            // для черт проверяем и добавление и удаление (если есть цены)
             const addPrice = item.AddPrice != null ? item.AddPrice : Infinity;
             const removePrice = item.RemovePrice != null ? item.RemovePrice : Infinity;
             const minPrice = Math.min(addPrice, removePrice);
             price = minPrice === Infinity ? 0 : minPrice;
           } else {
-            price = 0; // для погоды не применяем
+            price = 0;
           }
           if (balance < price) return false;
         }
@@ -857,7 +861,6 @@
 
     // ---------- инициализация ----------
     function init() {
-      // загружаем данные из localStorage в поля
       const player = getCurrentPlayer();
       const data = balanceData[player];
       document.getElementById('startBalance').value = data.start || 0;
