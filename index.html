@@ -16,7 +16,6 @@
     h1 { text-align: center; margin-bottom: 10px; font-weight: 300; letter-spacing: 1px; }
     .subtitle { text-align: center; color: #aaa; margin-bottom: 20px; font-size: 0.95rem; }
 
-    /* Вкладки */
     .tabs {
       display: flex;
       gap: 0;
@@ -42,10 +41,7 @@
       color: #fff;
       border-bottom: 3px solid #7bc97b;
     }
-    .tab-content {
-      display: none;
-      animation: fadeIn 0.3s;
-    }
+    .tab-content { display: none; animation: fadeIn 0.3s; }
     .tab-content.active { display: block; }
     @keyframes fadeIn { from { opacity: 0.3; } to { opacity: 1; } }
 
@@ -77,7 +73,7 @@
       gap: 6px;
       font-size: 0.95rem;
     }
-    .stats { font-size: 0.9rem; color: #aaa; margin-left: auto; }
+    .stats { font-size: 0.9rem; color: #aaa; margin-left: auto; white-space: nowrap; }
     .table-wrapper {
       overflow-x: auto;
       max-height: 70vh;
@@ -146,9 +142,12 @@
       font-size: 0.8rem;
       transition: 0.2s;
       white-space: nowrap;
+      margin: 2px 0;
     }
     .copy-btn:hover { background: #4a7a9a; }
     .copy-btn.copied { background: #2d7d3a; }
+    .copy-btn.remove { background: #7a4a3a; }
+    .copy-btn.remove:hover { background: #9a5a4a; }
     .loading { text-align: center; padding: 50px; font-size: 1.2rem; color: #aaa; }
     .no-results { text-align: center; padding: 30px; color: #aaa; }
     .toast {
@@ -169,6 +168,7 @@
     }
     .toast.show { opacity: 1; }
     .error-msg { color: #f77; text-align: center; padding: 30px; }
+    .stats-detail { font-size: 0.8rem; color: #aaa; margin-top: 4px; }
     @media (max-width: 768px) {
       .filters { flex-direction: column; align-items: stretch; }
       .filters input, .filters select { min-width: unset; width: 100%; }
@@ -184,14 +184,14 @@
   <h1>🎮 RimWorld · Команды и цены</h1>
   <p class="subtitle">Нажмите на кнопку, чтобы скопировать команду для чата</p>
 
-  <!-- Вкладки -->
   <div class="tabs" id="tabHeaders">
     <button class="tab-btn active" data-tab="events">⚔️ События</button>
     <button class="tab-btn" data-tab="store">🛒 Магазин</button>
     <button class="tab-btn" data-tab="weather">🌦️ Погода</button>
+    <button class="tab-btn" data-tab="traits">🧬 Черты</button>
   </div>
 
-  <!-- Контент вкладок -->
+  <!-- ============ Вкладка События ============ -->
   <div id="tab-events" class="tab-content active">
     <div class="filters" id="filters-events">
       <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="events" />
@@ -227,6 +227,7 @@
     </div>
   </div>
 
+  <!-- ============ Вкладка Магазин ============ -->
   <div id="tab-store" class="tab-content">
     <div class="filters" id="filters-store">
       <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="store" />
@@ -252,6 +253,7 @@
     </div>
   </div>
 
+  <!-- ============ Вкладка Погода ============ -->
   <div id="tab-weather" class="tab-content">
     <div class="filters" id="filters-weather">
       <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="weather" />
@@ -265,6 +267,36 @@
           <th style="cursor:default;">Скопировать</th>
         </tr></thead>
         <tbody id="body-weather"><tr><td colspan="3" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ Вкладка Черты ============ -->
+  <div id="tab-traits" class="tab-content">
+    <div class="filters" id="filters-traits">
+      <input type="text" class="search-input" placeholder="🔍 Поиск по названию..." data-tab="traits" />
+      <select class="mod-filter" data-tab="traits">
+        <option value="all">Все источники</option>
+        <option value="Core">Core</option>
+        <option value="Biotech">Biotech</option>
+        <option value="Royalty">Royalty</option>
+        <option value="Ideology">Ideology</option>
+        <option value="Vanilla Psycasts Expanded">Vanilla Psycasts Expanded</option>
+        <option value="Vanilla Ideology Expanded - Memes and Structures">Vanilla Ideology Expanded</option>
+      </select>
+      <span class="stats" id="stats-traits">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="name" data-tab="traits">Название</th>
+          <th data-sort="stats" data-tab="traits">Эффекты</th>
+          <th data-sort="addPrice" style="text-align:right;" data-tab="traits">Добавить</th>
+          <th data-sort="removePrice" style="text-align:right;" data-tab="traits">Удалить</th>
+          <th data-sort="modSource" data-tab="traits">Источник</th>
+          <th style="cursor:default;">Команды</th>
+        </tr></thead>
+        <tbody id="body-traits"><tr><td colspan="6" class="loading">⏳ Загрузка...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -297,13 +329,15 @@
       });
     }
 
-    // ---------- загрузка и рендеринг ----------
+    // ---------- данные ----------
     const dataSources = {
       events: { file: 'incidents.json', data: [], filtered: [] },
       store: { file: 'store.json', data: [], filtered: [] },
-      weather: { file: 'weather.json', data: [], filtered: [] }
+      weather: { file: 'weather.json', data: [], filtered: [] },
+      traits: { file: 'traits.json', data: [], filtered: [] }
     };
 
+    // ---------- рендеринг таблиц ----------
     function renderTable(tab) {
       const source = dataSources[tab];
       const tbody = document.getElementById(`body-${tab}`);
@@ -337,13 +371,21 @@
         });
       } else if (tab === 'store') {
         items.forEach(item => {
-          const karmaClass = `karma-${item.KarmaType || 'Neutral'}`;
+          // Извлекаем цену: ищем BaseCost или BasePrice
+          const cost = item.BaseCost ?? item.BasePrice ?? 0;
+          // Название: Label или CustomName или DefName
+          const label = item.Label || item.CustomName || item.DefName || 'Без названия';
+          // Карма: если нет, ставим Neutral
+          const karma = item.KarmaType || 'Neutral';
+          const karmaClass = `karma-${karma}`;
+          // Категория: Category или '—'
+          const category = item.Category || '—';
           const command = `!buy ${item.DefName}`;
           html += `<tr>
-            <td><strong>${item.Label || item.DefName}</strong></td>
-            <td style="text-align:right;"><span class="price">${item.BaseCost ?? 0}</span></td>
-            <td><span class="karma-badge ${karmaClass}">${item.KarmaType || 'Neutral'}</span></td>
-            <td><span class="category-badge">${item.Category || '—'}</span></td>
+            <td><strong>${label}</strong></td>
+            <td style="text-align:right;"><span class="price">${cost}</span></td>
+            <td><span class="karma-badge ${karmaClass}">${karma}</span></td>
+            <td><span class="category-badge">${category}</span></td>
             <td><button class="copy-btn" data-command="${command}">📋 Копировать</button></td>
           </tr>`;
         });
@@ -354,6 +396,25 @@
             <td><strong>${w.Label || w.DefName || w.label}</strong></td>
             <td><code style="background:#2a2a3e;padding:2px 8px;border-radius:4px;">${command}</code></td>
             <td><button class="copy-btn" data-command="${command}">📋 Копировать</button></td>
+          </tr>`;
+        });
+      } else if (tab === 'traits') {
+        items.forEach(t => {
+          const statsText = t.Stats && t.Stats.length ? t.Stats.join('; ') : '—';
+          const addPrice = t.AddPrice != null ? t.AddPrice : '—';
+          const removePrice = t.RemovePrice != null ? t.RemovePrice : '—';
+          const addCmd = `!addtrait ${t.DefName}`;
+          const removeCmd = `!removetrait ${t.DefName}`;
+          html += `<tr>
+            <td><strong>${t.Name || t.DefName}</strong></td>
+            <td style="font-size:0.85rem; color:#c0c0c0;">${statsText}</td>
+            <td style="text-align:right;"><span class="price">${addPrice}</span></td>
+            <td style="text-align:right;"><span class="price">${removePrice}</span></td>
+            <td class="mod-source">${t.ModSource || 'Core'}</td>
+            <td>
+              <button class="copy-btn" data-command="${addCmd}">➕ Добавить</button>
+              <button class="copy-btn remove" data-command="${removeCmd}">➖ Удалить</button>
+            </td>
           </tr>`;
         });
       }
@@ -385,39 +446,51 @@
 
     function applyFilters(tab) {
       const source = dataSources[tab];
-      const searchInput = document.querySelector(`#filters-${tab} .search-input`);
-      const karmaFilter = document.querySelector(`#filters-${tab} .karma-filter`);
-      const enabledFilter = document.querySelector(`#filters-${tab} .enabled-filter`);
-      const onlyRaidsCheck = document.querySelector(`#filters-${tab} .only-raids`);
+      const container = document.getElementById(`filters-${tab}`);
+      if (!container) return;
+      const searchInput = container.querySelector('.search-input');
+      const karmaFilter = container.querySelector('.karma-filter');
+      const enabledFilter = container.querySelector('.enabled-filter');
+      const onlyRaidsCheck = container.querySelector('.only-raids');
+      const modFilter = container.querySelector('.mod-filter');
 
       const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
       const karma = karmaFilter ? karmaFilter.value : 'all';
       const enabled = enabledFilter ? enabledFilter.value : 'all';
       const onlyRaids = onlyRaidsCheck ? onlyRaidsCheck.checked : false;
+      const mod = modFilter ? modFilter.value : 'all';
 
       source.filtered = source.data.filter(item => {
+        // поиск
         if (search) {
-          const label = (item.Label || '').toLowerCase();
+          const label = (item.Label || item.CustomName || item.Name || '').toLowerCase();
           const def = (item.DefName || '').toLowerCase();
           const cat = (item.CategoryName || item.Category || '').toLowerCase();
-          const mod = (item.ModSource || '').toLowerCase();
-          if (!label.includes(search) && !def.includes(search) && !cat.includes(search) && !mod.includes(search)) {
+          const modSrc = (item.ModSource || item.Mod || '').toLowerCase();
+          if (!label.includes(search) && !def.includes(search) && !cat.includes(search) && !modSrc.includes(search)) {
             return false;
           }
         }
-        if (karma !== 'all' && item.KarmaType !== karma) return false;
+        // карма
+        if (karma !== 'all' && (item.KarmaType || 'Neutral') !== karma) return false;
+        // статус включения (только для событий, у магазина может не быть Enabled, тогда считаем true)
         if (enabled !== 'all') {
-          const isEnabled = item.Enabled || false;
+          const isEnabled = item.Enabled !== undefined ? item.Enabled : true;
           if (enabled === 'true' && !isEnabled) return false;
           if (enabled === 'false' && isEnabled) return false;
         }
+        // только рейды (только для событий)
         if (onlyRaids && !item.IsRaidIncident) return false;
+        // фильтр по источнику (для черт)
+        if (mod !== 'all' && (item.ModSource || 'Core') !== mod) return false;
         return true;
       });
 
       renderTable(tab);
+      updateStats(tab);
     }
 
+    // ---------- загрузка данных ----------
     function loadData(tab) {
       const source = dataSources[tab];
       const url = source.file;
@@ -427,19 +500,35 @@
           return response.json();
         })
         .then(data => {
-          // data может быть объектом или массивом
-          if (Array.isArray(data)) {
-            source.data = data;
-          } else if (typeof data === 'object' && data !== null) {
-            source.data = Object.values(data);
+          let rawData = [];
+          // Определяем структуру
+          if (tab === 'store') {
+            // Если data — объект с ключом "items", берём его значение
+            if (data && typeof data === 'object' && data.items) {
+              rawData = Object.values(data.items);
+            } else if (Array.isArray(data)) {
+              rawData = data;
+            } else if (typeof data === 'object' && data !== null) {
+              rawData = Object.values(data);
+            } else {
+              rawData = [];
+            }
           } else {
-            source.data = [];
+            // Для остальных вкладок: если массив — берём как есть, иначе значения объекта
+            if (Array.isArray(data)) {
+              rawData = data;
+            } else if (typeof data === 'object' && data !== null) {
+              rawData = Object.values(data);
+            } else {
+              rawData = [];
+            }
           }
-          // добавим служебные поля
-          source.data = source.data.map(item => ({
+
+          source.data = rawData.map(item => ({
             ...item,
+            // служебные поля для единообразия
             isRaid: item.IsRaidIncident || false,
-            isEnabled: item.Enabled || false,
+            isEnabled: item.Enabled !== undefined ? item.Enabled : true,
           }));
           source.filtered = [...source.data];
           renderTable(tab);
@@ -458,17 +547,14 @@
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', function() {
         const tab = this.dataset.tab;
-        // скрыть все
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         document.getElementById(`tab-${tab}`).classList.add('active');
         this.classList.add('active');
-        // загрузить данные, если ещё не загружены
         const source = dataSources[tab];
         if (source.data.length === 0 && source.filtered.length === 0) {
           loadData(tab);
         } else {
-          // перерисовать (на случай если фильтры поменялись)
           renderTable(tab);
           updateStats(tab);
         }
@@ -476,15 +562,18 @@
     });
 
     // ---------- подписка на фильтры ----------
-    document.querySelectorAll('.search-input, .karma-filter, .enabled-filter, .only-raids').forEach(el => {
-      el.addEventListener('input', function() {
+    document.querySelectorAll('.search-input, .karma-filter, .enabled-filter, .only-raids, .mod-filter').forEach(el => {
+      const eventType = (el.tagName === 'INPUT' && el.type === 'checkbox') ? 'change' : 'input';
+      el.addEventListener(eventType, function() {
         const tab = this.dataset.tab;
         applyFilters(tab);
       });
-      el.addEventListener('change', function() {
-        const tab = this.dataset.tab;
-        applyFilters(tab);
-      });
+      if (el.tagName === 'SELECT') {
+        el.addEventListener('change', function() {
+          const tab = this.dataset.tab;
+          applyFilters(tab);
+        });
+      }
     });
 
     // ---------- сортировка ----------
@@ -494,7 +583,6 @@
         const key = this.dataset.sort;
         const source = dataSources[tab];
         if (!source.filtered.length) return;
-        // определяем направление
         const currentSort = source._sortKey;
         const currentAsc = source._sortAsc;
         if (currentSort === key) {
@@ -506,8 +594,15 @@
         const sortKey = source._sortKey;
         const asc = source._sortAsc;
         source.filtered.sort((a, b) => {
-          let valA = a[sortKey] ?? '';
-          let valB = b[sortKey] ?? '';
+          // Для цены в магазине используем BaseCost или BasePrice
+          let valA, valB;
+          if (tab === 'store' && (key === 'baseCost')) {
+            valA = a.BaseCost ?? a.BasePrice ?? 0;
+            valB = b.BaseCost ?? b.BasePrice ?? 0;
+          } else {
+            valA = a[key] ?? '';
+            valB = b[key] ?? '';
+          }
           if (typeof valA === 'string') valA = valA.toLowerCase();
           if (typeof valB === 'string') valB = valB.toLowerCase();
           if (valA < valB) return asc ? -1 : 1;
@@ -518,12 +613,9 @@
       });
     });
 
-    // ---------- инициализация: загружаем первую вкладку (events) ----------
+    // ---------- инициализация ----------
     loadData('events');
-
-    // для store и weather загрузим только при переключении (см. выше)
-    // но можно и сразу попробовать загрузить, чтобы файлы были кешированы
-    // но оставим ленивую загрузку.
+    // остальные загрузятся при переключении
   })();
 </script>
 </body>
