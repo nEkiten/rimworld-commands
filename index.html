@@ -3,35 +3,97 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RimWorld — все команды и цены</title>
+  <title>RimWorld — команды и цены</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
       background: #1e1e2f;
       color: #e0e0e0;
       padding: 20px;
     }
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
+    .container { max-width: 1500px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 5px; font-weight: 300; letter-spacing: 1px; }
+    .subtitle { text-align: center; color: #aaa; margin-bottom: 20px; font-size: 0.95rem; }
+
+    .balance-panel {
+      background: #2a2a3e;
+      border-radius: 12px;
+      padding: 15px 20px;
+      margin-bottom: 25px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 15px;
+      border: 1px solid #3a3a5a;
     }
-    h1 {
-      text-align: center;
-      margin-bottom: 10px;
-      font-weight: 300;
-      letter-spacing: 1px;
+    .balance-panel label {
+      font-size: 0.9rem;
+      color: #ccc;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
-    .subtitle {
-      text-align: center;
-      color: #aaa;
-      margin-bottom: 30px;
+    .balance-panel input, .balance-panel select {
+      background: #3a3a52;
+      border: 1px solid #555;
+      color: #eee;
+      padding: 6px 12px;
+      border-radius: 6px;
       font-size: 0.95rem;
+      width: 80px;
     }
+    .balance-panel select { width: auto; }
+    .balance-display {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #f0e68c;
+      margin: 0 10px;
+    }
+    .balance-panel button {
+      background: #3a5a7a;
+      border: none;
+      color: #fff;
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: 0.2s;
+    }
+    .balance-panel button:hover { background: #4a7a9a; }
+    .balance-panel button.danger { background: #7a4a3a; }
+    .balance-panel button.danger:hover { background: #9a5a4a; }
+    .balance-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 25px;
+      border-bottom: 2px solid #3a3a52;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: #2a2a3e;
+      border: none;
+      color: #aaa;
+      padding: 12px 28px;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      transition: 0.2s;
+      font-weight: 600;
+      margin-right: 2px;
+    }
+    .tab-btn:hover { background: #3a3a5a; color: #eee; }
+    .tab-btn.active {
+      background: #3a5a7a;
+      color: #fff;
+      border-bottom: 3px solid #7bc97b;
+    }
+    .tab-content { display: none; animation: fadeIn 0.3s; }
+    .tab-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0.3; } to { opacity: 1; } }
+
     .filters {
       display: flex;
       flex-wrap: wrap;
@@ -50,32 +112,28 @@
       padding: 8px 14px;
       border-radius: 6px;
       font-size: 0.95rem;
-      min-width: 180px;
+      min-width: 150px;
     }
-    .filters input::placeholder {
-      color: #888;
-    }
-    .filters select {
-      cursor: pointer;
-    }
+    .filters input::placeholder { color: #888; }
+    .filters select { cursor: pointer; }
     .filters label {
       display: flex;
       align-items: center;
       gap: 6px;
       font-size: 0.95rem;
     }
-    .stats {
-      font-size: 0.9rem;
-      color: #aaa;
-      margin-left: auto;
+    .stats { font-size: 0.9rem; color: #aaa; margin-left: auto; white-space: nowrap; }
+    .table-wrapper {
+      overflow-x: auto;
+      max-height: 70vh;
+      border-radius: 10px;
+      background: #1e1e30;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
     table {
       width: 100%;
       border-collapse: collapse;
       background: #252538;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
     th {
       background: #33334a;
@@ -89,18 +147,15 @@
       top: 0;
       z-index: 10;
       border-bottom: 2px solid #4a4a6a;
+      white-space: nowrap;
     }
-    th:hover {
-      background: #3d3d5a;
-    }
+    th:hover { background: #3d3d5a; }
     td {
       padding: 10px 10px;
       border-bottom: 1px solid #3a3a52;
       vertical-align: middle;
     }
-    tr:hover td {
-      background: #2e2e48;
-    }
+    tr:hover td { background: #2e2e48; }
     .karma-badge {
       display: inline-block;
       padding: 3px 12px;
@@ -124,229 +179,856 @@
       display: inline-block;
       white-space: nowrap;
     }
-    .mod-source {
+    .mod-source { font-size: 0.8rem; color: #aaa; }
+    .price { font-weight: 600; color: #f0e68c; }
+    .copy-btn {
+      background: #3a5a7a;
+      border: none;
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
       font-size: 0.8rem;
-      color: #aaa;
+      transition: 0.2s;
+      white-space: nowrap;
+      margin: 2px 0;
     }
-    .price {
+    .copy-btn:hover { background: #4a7a9a; }
+    .copy-btn.copied { background: #2d7d3a; }
+    .copy-btn.remove { background: #7a4a3a; }
+    .copy-btn.remove:hover { background: #9a5a4a; }
+    .copy-btn.buy-btn { background: #2d7d3a; }
+    .copy-btn.buy-btn:hover { background: #3a9a4a; }
+    .copy-btn.buy-btn:disabled { background: #4a4a6a; color: #888; cursor: not-allowed; }
+    .loading { text-align: center; padding: 50px; font-size: 1.2rem; color: #aaa; }
+    .no-results { text-align: center; padding: 30px; color: #aaa; }
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2d7d3a;
+      color: #fff;
+      padding: 10px 25px;
+      border-radius: 30px;
       font-weight: 600;
-      color: #f0e68c;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 999;
     }
-    .table-wrapper {
-      overflow-x: auto;
-      max-height: 75vh;
-      border-radius: 10px;
-      background: #1e1e30;
+    .toast.show { opacity: 1; }
+    .error-msg { color: #f77; text-align: center; padding: 30px; }
+    .balance-panel .coin-icon { font-size: 1.2rem; margin-right: 4px; }
+    .permission-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: #3a3a5a;
+      color: #ccc;
     }
-    .loading {
-      text-align: center;
-      padding: 50px;
-      font-size: 1.2rem;
-      color: #aaa;
-    }
-    .no-results {
-      text-align: center;
-      padding: 30px;
-      color: #aaa;
-    }
+    .permission-everyone { background: #2d7d3a; color: #c8f0c0; }
+    .permission-moderator { background: #b85a2a; color: #f5d0b0; }
+    .permission-streamer { background: #7a4a9a; color: #e0c0f0; }
+    .xenotype-list { font-size: 0.8rem; color: #c0c0c0; }
+    .xenotype-item { display: inline-block; background: #2a2a3e; padding: 2px 8px; border-radius: 12px; margin: 2px; }
     @media (max-width: 768px) {
-      .filters {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .filters input, .filters select {
-        min-width: unset;
-        width: 100%;
-      }
-      .stats {
-        margin-left: 0;
-        text-align: center;
-      }
-      th, td {
-        padding: 8px 6px;
-        font-size: 0.85rem;
-      }
+      .filters { flex-direction: column; align-items: stretch; }
+      .filters input, .filters select { min-width: unset; width: 100%; }
+      .stats { margin-left: 0; text-align: center; }
+      th, td { padding: 6px 4px; font-size: 0.75rem; }
+      .copy-btn { padding: 2px 8px; font-size: 0.7rem; }
+      .tab-btn { padding: 10px 16px; font-size: 0.9rem; }
+      .balance-panel { flex-direction: column; align-items: stretch; gap: 10px; }
+      .balance-panel input, .balance-panel select { width: 100%; }
+      .balance-display { text-align: center; }
     }
   </style>
 </head>
 <body>
 <div class="container">
-  <h1>🎮 RimWorld · Команды и события</h1>
-  <p class="subtitle">Интерактивный справочник всех доступных инцидентов для вашего режима дуэли</p>
+  <h1>🎮 RimWorld · Команды и цены</h1>
+  <p class="subtitle">Управляйте балансом и покупайте события в один клик</p>
 
-  <div class="filters">
-    <input type="text" id="searchInput" placeholder="🔍 Поиск по названию, категории..." />
-    <select id="karmaFilter">
-      <option value="all">Все типы кармы</option>
-      <option value="Good">✅ Good</option>
-      <option value="Neutral">⚪ Neutral</option>
-      <option value="Bad">⚠️ Bad</option>
-      <option value="Doom">💀 Doom</option>
-    </select>
-    <select id="enabledFilter">
-      <option value="all">Все статусы</option>
-      <option value="true">✅ Включено</option>
-      <option value="false">❌ Отключено</option>
-    </select>
+  <!-- Панель баланса -->
+  <div class="balance-panel">
     <label>
-      <input type="checkbox" id="showOnlyRaids" /> Только рейды
+      Игрок:
+      <select id="playerSelect">
+        <option value="player1">Вы</option>
+        <option value="player2">Друг</option>
+      </select>
     </label>
-    <span class="stats" id="stats">Загрузка...</span>
+    <div>
+      <span class="coin-icon">🪙</span>
+      <span class="balance-display" id="balanceDisplay">0</span>
+    </div>
+    <div class="balance-actions">
+      <label>
+        Нач. баланс:
+        <input type="number" id="startBalance" value="0" step="10" min="0" />
+      </label>
+      <label>
+        Очков/мин:
+        <input type="number" id="ratePerMin" value="30" step="5" min="0" />
+      </label>
+      <button id="setBalanceBtn">Установить</button>
+      <button id="addCoinsBtn">➕ Добавить 100</button>
+      <button id="resetBalanceBtn" class="danger">🔄 Сброс</button>
+    </div>
   </div>
 
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th data-sort="label">Название</th>
-          <th data-sort="baseCost" style="text-align:right;">Цена</th>
-          <th data-sort="karmaType">Карма</th>
-          <th data-sort="categoryName">Категория</th>
-          <th data-sort="modSource">Источник</th>
-          <th data-sort="enabled">Статус</th>
-          <th data-sort="isRaid">Рейд</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        <tr><td colspan="7" class="loading">⏳ Загрузка данных...</td></tr>
-      </tbody>
-    </table>
+  <!-- Вкладки -->
+  <div class="tabs" id="tabHeaders">
+    <button class="tab-btn active" data-tab="events">⚔️ События</button>
+    <button class="tab-btn" data-tab="store">🛒 Магазин</button>
+    <button class="tab-btn" data-tab="weather">🌦️ Погода</button>
+    <button class="tab-btn" data-tab="traits">🧬 Черты</button>
+    <button class="tab-btn" data-tab="commands">📖 Команды</button>
+    <button class="tab-btn" data-tab="races">👥 Расы</button>
+  </div>
+
+  <!-- ============ Вкладка События ============ -->
+  <div id="tab-events" class="tab-content active">
+    <div class="filters" id="filters-events">
+      <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="events" />
+      <select class="karma-filter" data-tab="events">
+        <option value="all">Все типы кармы</option>
+        <option value="Good">✅ Good</option>
+        <option value="Neutral">⚪ Neutral</option>
+        <option value="Bad">⚠️ Bad</option>
+        <option value="Doom">💀 Doom</option>
+      </select>
+      <select class="enabled-filter" data-tab="events">
+        <option value="all">Все статусы</option>
+        <option value="true">✅ Включено</option>
+        <option value="false">❌ Отключено</option>
+      </select>
+      <label><input type="checkbox" class="only-raids" data-tab="events" /> Только рейды</label>
+      <label><input type="checkbox" class="only-affordable" data-tab="events" /> Только доступные</label>
+      <span class="stats" id="stats-events">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="label" data-tab="events">Название</th>
+          <th data-sort="baseCost" style="text-align:right;" data-tab="events">Цена</th>
+          <th data-sort="karmaType" data-tab="events">Карма</th>
+          <th data-sort="categoryName" data-tab="events">Категория</th>
+          <th data-sort="modSource" data-tab="events">Источник</th>
+          <th data-sort="enabled" data-tab="events">Статус</th>
+          <th data-sort="isRaid" data-tab="events">Рейд</th>
+          <th style="cursor:default;">Купить</th>
+        </tr></thead>
+        <tbody id="body-events"><tr><td colspan="8" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ Вкладка Магазин ============ -->
+  <div id="tab-store" class="tab-content">
+    <div class="filters" id="filters-store">
+      <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="store" />
+      <select class="karma-filter" data-tab="store">
+        <option value="all">Все типы кармы</option>
+        <option value="Good">✅ Good</option>
+        <option value="Neutral">⚪ Neutral</option>
+        <option value="Bad">⚠️ Bad</option>
+      </select>
+      <label><input type="checkbox" class="only-affordable" data-tab="store" /> Только доступные</label>
+      <span class="stats" id="stats-store">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="label" data-tab="store">Название</th>
+          <th data-sort="baseCost" style="text-align:right;" data-tab="store">Цена</th>
+          <th data-sort="karmaType" data-tab="store">Карма</th>
+          <th data-sort="category" data-tab="store">Категория</th>
+          <th style="cursor:default;">Купить</th>
+        </tr></thead>
+        <tbody id="body-store"><tr><td colspan="5" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ Вкладка Погода ============ -->
+  <div id="tab-weather" class="tab-content">
+    <div class="filters" id="filters-weather">
+      <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="weather" />
+      <select class="karma-filter" data-tab="weather">
+        <option value="all">Все типы кармы</option>
+        <option value="Good">✅ Good</option>
+        <option value="Neutral">⚪ Neutral</option>
+        <option value="Bad">⚠️ Bad</option>
+        <option value="Doom">💀 Doom</option>
+      </select>
+      <label><input type="checkbox" class="only-affordable" data-tab="weather" /> Только доступные</label>
+      <span class="stats" id="stats-weather">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="label" data-tab="weather">Название</th>
+          <th data-sort="baseCost" style="text-align:right;" data-tab="weather">Цена</th>
+          <th data-sort="karmaType" data-tab="weather">Карма</th>
+          <th style="cursor:default;">Купить</th>
+        </tr></thead>
+        <tbody id="body-weather"><tr><td colspan="4" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ Вкладка Черты ============ -->
+  <div id="tab-traits" class="tab-content">
+    <div class="filters" id="filters-traits">
+      <input type="text" class="search-input" placeholder="🔍 Поиск по названию..." data-tab="traits" />
+      <select class="mod-filter" data-tab="traits">
+        <option value="all">Все источники</option>
+        <option value="Core">Core</option>
+        <option value="Biotech">Biotech</option>
+        <option value="Royalty">Royalty</option>
+        <option value="Ideology">Ideology</option>
+        <option value="Vanilla Psycasts Expanded">Vanilla Psycasts Expanded</option>
+        <option value="Vanilla Ideology Expanded - Memes and Structures">Vanilla Ideology Expanded</option>
+      </select>
+      <span class="stats" id="stats-traits">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="name" data-tab="traits">Название</th>
+          <th data-sort="stats" data-tab="traits">Эффекты</th>
+          <th data-sort="addPrice" style="text-align:right;" data-tab="traits">Добавить</th>
+          <th data-sort="removePrice" style="text-align:right;" data-tab="traits">Удалить</th>
+          <th data-sort="modSource" data-tab="traits">Источник</th>
+          <th style="cursor:default;">Команды</th>
+        </tr></thead>
+        <tbody id="body-traits"><tr><td colspan="6" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ Вкладка Команды ============ -->
+  <div id="tab-commands" class="tab-content">
+    <div class="filters" id="filters-commands">
+      <input type="text" class="search-input" placeholder="🔍 Поиск..." data-tab="commands" />
+      <select class="permission-filter" data-tab="commands">
+        <option value="all">Все разрешения</option>
+        <option value="everyone">👥 Все</option>
+        <option value="moderator">🛡️ Модератор</option>
+        <option value="streamer">🎥 Стример</option>
+      </select>
+      <select class="enabled-filter" data-tab="commands">
+        <option value="all">Все статусы</option>
+        <option value="true">✅ Включено</option>
+        <option value="false">❌ Отключено</option>
+      </select>
+      <span class="stats" id="stats-commands">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="label" data-tab="commands">Команда</th>
+          <th data-sort="commandDescription" data-tab="commands">Описание</th>
+          <th data-sort="permissionLevel" data-tab="commands">Разрешение</th>
+          <th data-sort="enabled" data-tab="commands">Статус</th>
+          <th data-sort="cooldownSeconds" style="text-align:right;" data-tab="commands">Кулдаун (с)</th>
+          <th style="cursor:default;">Копировать</th>
+        </tr></thead>
+        <tbody id="body-commands"><tr><td colspan="6" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ Вкладка Расы ============ -->
+  <div id="tab-races" class="tab-content">
+    <div class="filters" id="filters-races">
+      <input type="text" class="search-input" placeholder="🔍 Поиск по расе или ксеногипу..." data-tab="races" />
+      <label><input type="checkbox" class="only-enabled" data-tab="races" /> Только включённые</label>
+      <span class="stats" id="stats-races">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="displayName" data-tab="races">Раса</th>
+          <th data-sort="basePrice" style="text-align:right;" data-tab="races">Баз. цена</th>
+          <th data-sort="ageRange" data-tab="races">Возраст</th>
+          <th data-sort="xenotypes" data-tab="races">Ксеногипы (цены)</th>
+          <th style="cursor:default;">Купить</th>
+        </tr></thead>
+        <tbody id="body-races"><tr><td colspan="5" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
+<div id="toast" class="toast">📋 Скопировано!</div>
+
 <script>
   (function() {
-    // --- данные ---
-    let incidents = [];
-    let filteredIncidents = [];
-    const tbody = document.getElementById('tableBody');
-    const statsSpan = document.getElementById('stats');
+    // ---------- Баланс (localStorage) ----------
+    const STORAGE_KEY = 'rimworld_balance_data';
+    let balanceData = loadBalanceData();
 
-    // --- загрузка JSON ---
-    async function loadData() {
+    function loadBalanceData() {
       try {
-        const response = await fetch('incidents.json');
-        if (!response.ok) throw new Error('Не удалось загрузить incidents.json');
-        const data = await response.json();
-        // data — это объект, ключи — DefName
-        incidents = Object.values(data).map(item => ({
-          ...item,
-          // добавляем удобные булевы поля для фильтров
-          isRaid: item.IsRaidIncident || false,
-          isEnabled: item.Enabled || false,
-        }));
-        filteredIncidents = [...incidents];
-        renderTable();
-        updateStats();
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="7" style="color:#f77;">❌ Ошибка загрузки: ${err.message}</td></tr>`;
-        statsSpan.textContent = 'Ошибка';
-        console.error(err);
-      }
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (!parsed.player1) parsed.player1 = { balance: 0, start: 0, rate: 30 };
+          if (!parsed.player2) parsed.player2 = { balance: 0, start: 0, rate: 30 };
+          return parsed;
+        }
+      } catch (e) {}
+      return {
+        player1: { balance: 0, start: 0, rate: 30 },
+        player2: { balance: 0, start: 0, rate: 30 }
+      };
     }
 
-    // --- рендеринг ---
-    function renderTable() {
-      if (filteredIncidents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="no-results">😕 Ничего не найдено</td></tr>`;
+    function saveBalanceData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(balanceData));
+    }
+
+    function getCurrentPlayer() {
+      return document.getElementById('playerSelect').value;
+    }
+
+    function getCurrentBalance() {
+      const player = getCurrentPlayer();
+      return balanceData[player].balance || 0;
+    }
+
+    function setCurrentBalance(newBalance) {
+      const player = getCurrentPlayer();
+      balanceData[player].balance = Math.max(0, Math.round(newBalance));
+      saveBalanceData();
+      updateBalanceDisplay();
+      applyFiltersToAllTabs();
+    }
+
+    function updateBalanceDisplay() {
+      const bal = getCurrentBalance();
+      document.getElementById('balanceDisplay').textContent = bal;
+    }
+
+    // ---------- Начисление очков ----------
+    let intervalId = null;
+
+    function startAutoEarn() {
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        const player = getCurrentPlayer();
+        const rate = balanceData[player].rate || 0;
+        if (rate > 0) {
+          const current = balanceData[player].balance || 0;
+          balanceData[player].balance = current + rate;
+          saveBalanceData();
+          updateBalanceDisplay();
+          applyFiltersToAllTabs();
+        }
+      }, 60000);
+    }
+
+    // ---------- Применение фильтров ко всем вкладкам ----------
+    function applyFiltersToAllTabs() {
+      ['events', 'store', 'weather', 'traits', 'commands', 'races'].forEach(tab => {
+        applyFilters(tab);
+      });
+    }
+
+    // ---------- утилиты ----------
+    function showToast(text = '📋 Скопировано!') {
+      const toast = document.getElementById('toast');
+      toast.textContent = text;
+      toast.classList.add('show');
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 Скопировано: ' + text);
+      }).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('📋 Скопировано: ' + text);
+      });
+    }
+
+    // ---------- данные ----------
+    const dataSources = {
+      events: { file: 'incidents.json', data: [], filtered: [] },
+      store: { file: 'store.json', data: [], filtered: [] },
+      weather: { file: 'weather.json', data: [], filtered: [] },
+      traits: { file: 'traits.json', data: [], filtered: [] },
+      commands: { file: 'commands.json', data: [], filtered: [] },
+      races: { file: 'races.json', data: [], filtered: [] }
+    };
+
+    // ---------- рендеринг таблиц ----------
+    function renderTable(tab) {
+      const source = dataSources[tab];
+      const tbody = document.getElementById(`body-${tab}`);
+      const statsSpan = document.getElementById(`stats-${tab}`);
+      const items = source.filtered;
+
+      if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="no-results">😕 Нет данных или ничего не найдено</td></tr>`;
+        statsSpan.textContent = `0 элементов`;
         return;
       }
+
+      const balance = getCurrentBalance();
       let html = '';
-      filteredIncidents.forEach(inc => {
-        const karmaClass = `karma-${inc.KarmaType || 'Neutral'}`;
-        const enabledClass = inc.Enabled ? 'enabled-true' : 'enabled-false';
-        const enabledText = inc.Enabled ? '✅ Да' : '❌ Нет';
-        const raidIcon = inc.IsRaidIncident ? '⚔️' : '—';
-        html += `<tr>
-          <td><strong>${inc.Label || inc.DefName}</strong></td>
-          <td style="text-align:right;"><span class="price">${inc.BaseCost ?? 0}</span></td>
-          <td><span class="karma-badge ${karmaClass}">${inc.KarmaType || 'Neutral'}</span></td>
-          <td><span class="category-badge">${inc.CategoryName || '—'}</span></td>
-          <td class="mod-source">${inc.ModSource || 'Core'}</td>
-          <td class="${enabledClass}">${enabledText}</td>
-          <td>${raidIcon}</td>
-        </tr>`;
-      });
+      if (tab === 'events') {
+        items.forEach(inc => {
+          const price = inc.BaseCost ?? 0;
+          const canAfford = balance >= price;
+          const karmaClass = `karma-${inc.KarmaType || 'Neutral'}`;
+          const enabledClass = inc.Enabled ? 'enabled-true' : 'enabled-false';
+          const enabledText = inc.Enabled ? '✅ Да' : '❌ Нет';
+          const raidIcon = inc.IsRaidIncident ? '⚔️' : '—';
+          const command = `!buy ${inc.DefName}`;
+          html += `<tr>
+            <td><strong>${inc.Label || inc.DefName}</strong></td>
+            <td style="text-align:right;"><span class="price">${price}</span></td>
+            <td><span class="karma-badge ${karmaClass}">${inc.KarmaType || 'Neutral'}</span></td>
+            <td><span class="category-badge">${inc.CategoryName || '—'}</span></td>
+            <td class="mod-source">${inc.ModSource || 'Core'}</td>
+            <td class="${enabledClass}">${enabledText}</td>
+            <td>${raidIcon}</td>
+            <td>
+              <button class="copy-btn buy-btn" data-command="${command}" data-price="${price}" ${canAfford ? '' : 'disabled'}>💰 Купить</button>
+              <button class="copy-btn" data-command="${command}">📋 Копировать</button>
+            </td>
+          </tr>`;
+        });
+      } else if (tab === 'store') {
+        items.forEach(item => {
+          const price = item.BaseCost ?? item.BasePrice ?? 0;
+          const canAfford = balance >= price;
+          const label = item.Label || item.CustomName || item.DefName || 'Без названия';
+          const karma = item.KarmaType || 'Neutral';
+          const karmaClass = `karma-${karma}`;
+          const category = item.Category || '—';
+          const command = `!buy ${item.DefName}`;
+          html += `<tr>
+            <td><strong>${label}</strong></td>
+            <td style="text-align:right;"><span class="price">${price}</span></td>
+            <td><span class="karma-badge ${karmaClass}">${karma}</span></td>
+            <td><span class="category-badge">${category}</span></td>
+            <td>
+              <button class="copy-btn buy-btn" data-command="${command}" data-price="${price}" ${canAfford ? '' : 'disabled'}>💰 Купить</button>
+              <button class="copy-btn" data-command="${command}">📋 Копировать</button>
+            </td>
+          </tr>`;
+        });
+      } else if (tab === 'weather') {
+        items.forEach(w => {
+          const price = w.BaseCost ?? 0;
+          const canAfford = balance >= price;
+          const karma = w.KarmaType || 'Neutral';
+          const karmaClass = `karma-${karma}`;
+          const command = `!weather ${w.DefName || w.Command || w.label}`;
+          html += `<tr>
+            <td><strong>${w.Label || w.DefName || w.label}</strong></td>
+            <td style="text-align:right;"><span class="price">${price}</span></td>
+            <td><span class="karma-badge ${karmaClass}">${karma}</span></td>
+            <td>
+              <button class="copy-btn buy-btn" data-command="${command}" data-price="${price}" ${canAfford ? '' : 'disabled'}>💰 Купить</button>
+              <button class="copy-btn" data-command="${command}">📋 Копировать</button>
+            </td>
+          </tr>`;
+        });
+      } else if (tab === 'traits') {
+        items.forEach(t => {
+          const statsText = t.Stats && t.Stats.length ? t.Stats.join('; ') : '—';
+          const addPrice = t.AddPrice != null ? t.AddPrice : '—';
+          const removePrice = t.RemovePrice != null ? t.RemovePrice : '—';
+          const addCmd = `!addtrait ${t.DefName}`;
+          const removeCmd = `!removetrait ${t.DefName}`;
+          const canAdd = (addPrice === '—') ? true : (balance >= addPrice);
+          const canRemove = (removePrice === '—') ? true : (balance >= removePrice);
+          html += `<tr>
+            <td><strong>${t.Name || t.DefName}</strong></td>
+            <td style="font-size:0.85rem; color:#c0c0c0;">${statsText}</td>
+            <td style="text-align:right;"><span class="price">${addPrice}</span></td>
+            <td style="text-align:right;"><span class="price">${removePrice}</span></td>
+            <td class="mod-source">${t.ModSource || 'Core'}</td>
+            <td>
+              <button class="copy-btn buy-btn" data-command="${addCmd}" data-price="${addPrice}" ${canAdd ? '' : 'disabled'}>➕ Добавить</button>
+              <button class="copy-btn buy-btn remove" data-command="${removeCmd}" data-price="${removePrice}" ${canRemove ? '' : 'disabled'}>➖ Удалить</button>
+              <button class="copy-btn" data-command="${addCmd}">📋 Копировать</button>
+            </td>
+          </tr>`;
+        });
+      } else if (tab === 'commands') {
+        items.forEach(cmd => {
+          const cmdName = cmd.DefName || Object.keys(cmd)[0] || 'команда';
+          const label = cmd.Label || cmdName;
+          const description = cmd.CommandDescription || '—';
+          const permission = cmd.PermissionLevel || 'everyone';
+          const permClass = `permission-${permission}`;
+          const enabled = cmd.Enabled !== undefined ? cmd.Enabled : true;
+          const enabledClass = enabled ? 'enabled-true' : 'enabled-false';
+          const enabledText = enabled ? '✅ Да' : '❌ Нет';
+          const cooldown = cmd.CooldownSeconds ?? 0;
+          const alias = cmd.CommandAlias || '';
+          const commandText = alias ? `!${alias}` : `!${cmdName}`;
+          html += `<tr>
+            <td><strong>${label}</strong></td>
+            <td style="font-size:0.85rem; color:#c0c0c0;">${description}</td>
+            <td><span class="permission-badge ${permClass}">${permission}</span></td>
+            <td class="${enabledClass}">${enabledText}</td>
+            <td style="text-align:right;">${cooldown}</td>
+            <td><button class="copy-btn" data-command="${commandText}">📋 Копировать</button></td>
+          </tr>`;
+        });
+      } else if (tab === 'races') {
+        items.forEach(race => {
+          const displayName = race.DisplayName || race.DefName || 'Без названия';
+          const basePrice = race.BasePrice ?? 0;
+          const minAge = race.MinAge ?? '?';
+          const maxAge = race.MaxAge ?? '?';
+          const ageRange = `${minAge}–${maxAge}`;
+          const xenotypePrices = race.XenotypePrices || {};
+          const xenotypeList = Object.keys(xenotypePrices).map(x => {
+            const price = xenotypePrices[x];
+            const enabled = race.EnabledXenotypes && race.EnabledXenotypes[x] !== undefined ? race.EnabledXenotypes[x] : true;
+            return `<span class="xenotype-item">${x} ${price}🪙</span>`;
+          }).join(' ');
+          const command = `!buy Pawn`; // базовая команда покупки пешки
+          const canAfford = balance >= basePrice;
+          html += `<tr>
+            <td><strong>${displayName}</strong></td>
+            <td style="text-align:right;"><span class="price">${basePrice}</span></td>
+            <td>${ageRange}</td>
+            <td class="xenotype-list">${xenotypeList || '—'}</td>
+            <td>
+              <button class="copy-btn buy-btn" data-command="${command}" data-price="${basePrice}" ${canAfford ? '' : 'disabled'}>💰 Купить</button>
+              <button class="copy-btn" data-command="${command}">📋 Копировать</button>
+            </td>
+          </tr>`;
+        });
+      }
+
       tbody.innerHTML = html;
+      statsSpan.textContent = `📊 ${items.length} элементов`;
+
+      // обработчики для всех кнопок
+      document.querySelectorAll(`#body-${tab} .copy-btn`).forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const command = this.dataset.command;
+          const price = parseFloat(this.dataset.price);
+          if (this.classList.contains('buy-btn') && !isNaN(price) && !this.disabled) {
+            const currentBalance = getCurrentBalance();
+            if (currentBalance >= price) {
+              setCurrentBalance(currentBalance - price);
+              copyToClipboard(command);
+              renderTable(tab);
+              applyFilters(tab);
+            } else {
+              showToast('❌ Недостаточно очков!');
+            }
+          } else if (!this.classList.contains('buy-btn')) {
+            copyToClipboard(command);
+            this.classList.add('copied');
+            setTimeout(() => this.classList.remove('copied'), 1000);
+          }
+        });
+      });
     }
 
-    function updateStats() {
-      statsSpan.textContent = `📊 ${filteredIncidents.length} из ${incidents.length} событий`;
+    function updateStats(tab) {
+      const source = dataSources[tab];
+      const statsSpan = document.getElementById(`stats-${tab}`);
+      if (source.data.length === 0) {
+        statsSpan.textContent = 'Нет данных';
+      } else {
+        statsSpan.textContent = `📊 ${source.filtered.length} из ${source.data.length}`;
+      }
     }
 
-    // --- фильтры ---
-    function applyFilters() {
-      const search = document.getElementById('searchInput').value.toLowerCase().trim();
-      const karma = document.getElementById('karmaFilter').value;
-      const enabled = document.getElementById('enabledFilter').value;
-      const onlyRaids = document.getElementById('showOnlyRaids').checked;
+    function applyFilters(tab) {
+      const source = dataSources[tab];
+      const container = document.getElementById(`filters-${tab}`);
+      if (!container) return;
+      const searchInput = container.querySelector('.search-input');
+      const karmaFilter = container.querySelector('.karma-filter');
+      const enabledFilter = container.querySelector('.enabled-filter');
+      const onlyRaidsCheck = container.querySelector('.only-raids');
+      const onlyAffordableCheck = container.querySelector('.only-affordable');
+      const modFilter = container.querySelector('.mod-filter');
+      const permissionFilter = container.querySelector('.permission-filter');
+      const onlyEnabledCheck = container.querySelector('.only-enabled');
 
-      filteredIncidents = incidents.filter(inc => {
-        // поиск
+      const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      const karma = karmaFilter ? karmaFilter.value : 'all';
+      const enabled = enabledFilter ? enabledFilter.value : 'all';
+      const onlyRaids = onlyRaidsCheck ? onlyRaidsCheck.checked : false;
+      const onlyAffordable = onlyAffordableCheck ? onlyAffordableCheck.checked : false;
+      const mod = modFilter ? modFilter.value : 'all';
+      const permission = permissionFilter ? permissionFilter.value : 'all';
+      const onlyEnabled = onlyEnabledCheck ? onlyEnabledCheck.checked : false;
+
+      const balance = getCurrentBalance();
+
+      source.filtered = source.data.filter(item => {
         if (search) {
-          const label = (inc.Label || '').toLowerCase();
-          const def = (inc.DefName || '').toLowerCase();
-          const cat = (inc.CategoryName || '').toLowerCase();
-          const mod = (inc.ModSource || '').toLowerCase();
-          if (!label.includes(search) && !def.includes(search) && !cat.includes(search) && !mod.includes(search)) {
+          const label = (item.Label || item.CustomName || item.Name || item.DisplayName || '').toLowerCase();
+          const def = (item.DefName || '').toLowerCase();
+          const cat = (item.CategoryName || item.Category || '').toLowerCase();
+          const modSrc = (item.ModSource || item.Mod || '').toLowerCase();
+          const desc = (item.CommandDescription || '').toLowerCase();
+          // для рас ищем ещё и по ксеногипам
+          let xenotypeMatch = false;
+          if (item.XenotypePrices) {
+            const xenotypes = Object.keys(item.XenotypePrices).join(' ').toLowerCase();
+            if (xenotypes.includes(search)) xenotypeMatch = true;
+          }
+          if (!label.includes(search) && !def.includes(search) && !cat.includes(search) && !modSrc.includes(search) && !desc.includes(search) && !xenotypeMatch) {
             return false;
           }
         }
-        // карма
-        if (karma !== 'all' && inc.KarmaType !== karma) return false;
-        // статус включения
+        if (karma !== 'all' && (item.KarmaType || 'Neutral') !== karma) return false;
         if (enabled !== 'all') {
-          const isEnabled = inc.Enabled || false;
+          const isEnabled = item.Enabled !== undefined ? item.Enabled : true;
           if (enabled === 'true' && !isEnabled) return false;
           if (enabled === 'false' && isEnabled) return false;
         }
-        // только рейды
-        if (onlyRaids && !inc.IsRaidIncident) return false;
+        if (onlyRaids && !item.IsRaidIncident) return false;
+        if (mod !== 'all' && (item.ModSource || 'Core') !== mod) return false;
+        if (permission !== 'all' && (item.PermissionLevel || 'everyone') !== permission) return false;
+        if (onlyEnabled && !item.Enabled) return false;
+        if (onlyAffordable) {
+          let price = 0;
+          if (tab === 'events') price = item.BaseCost ?? 0;
+          else if (tab === 'store') price = item.BaseCost ?? item.BasePrice ?? 0;
+          else if (tab === 'weather') price = item.BaseCost ?? 0;
+          else if (tab === 'traits') {
+            const addPrice = item.AddPrice != null ? item.AddPrice : Infinity;
+            const removePrice = item.RemovePrice != null ? item.RemovePrice : Infinity;
+            const minPrice = Math.min(addPrice, removePrice);
+            price = minPrice === Infinity ? 0 : minPrice;
+          } else if (tab === 'races') {
+            price = item.BasePrice ?? 0;
+          } else {
+            price = 0;
+          }
+          if (balance < price) return false;
+        }
         return true;
       });
 
-      renderTable();
-      updateStats();
+      renderTable(tab);
+      updateStats(tab);
     }
 
-    // --- сортировка по заголовкам ---
-    let sortKey = 'label';
-    let sortAsc = true;
+    // ---------- загрузка данных ----------
+    function loadData(tab) {
+      const source = dataSources[tab];
+      const url = source.file;
+      fetch(url)
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          let rawData = [];
+          if (tab === 'store') {
+            if (data && typeof data === 'object' && data.items) {
+              rawData = Object.values(data.items);
+            } else if (Array.isArray(data)) {
+              rawData = data;
+            } else if (typeof data === 'object' && data !== null) {
+              rawData = Object.values(data);
+            } else {
+              rawData = [];
+            }
+          } else if (tab === 'races') {
+            // для рас: если объект, берём значения (каждая раса)
+            if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+              rawData = Object.values(data);
+            } else if (Array.isArray(data)) {
+              rawData = data;
+            } else {
+              rawData = [];
+            }
+          } else {
+            if (Array.isArray(data)) {
+              rawData = data;
+            } else if (typeof data === 'object' && data !== null) {
+              rawData = Object.values(data);
+            } else {
+              rawData = [];
+            }
+          }
 
-    function sortTable(key) {
-      if (sortKey === key) {
-        sortAsc = !sortAsc;
-      } else {
-        sortKey = key;
-        sortAsc = true;
-      }
-      filteredIncidents.sort((a, b) => {
-        let valA = a[key] ?? '';
-        let valB = b[key] ?? '';
-        if (typeof valA === 'string') valA = valA.toLowerCase();
-        if (typeof valB === 'string') valB = valB.toLowerCase();
-        if (valA < valB) return sortAsc ? -1 : 1;
-        if (valA > valB) return sortAsc ? 1 : -1;
-        return 0;
-      });
-      renderTable();
+          source.data = rawData.map(item => ({
+            ...item,
+            isRaid: item.IsRaidIncident || false,
+            isEnabled: item.Enabled !== undefined ? item.Enabled : true,
+          }));
+          source.filtered = [...source.data];
+          renderTable(tab);
+          updateStats(tab);
+        })
+        .catch(err => {
+          console.warn(`Ошибка загрузки ${url}:`, err);
+          const tbody = document.getElementById(`body-${tab}`);
+          tbody.innerHTML = `<tr><td colspan="8" class="error-msg">❌ Не удалось загрузить ${url}.<br>Убедитесь, что файл существует в репозитории.</td></tr>`;
+          const statsSpan = document.getElementById(`stats-${tab}`);
+          statsSpan.textContent = 'Ошибка';
+        });
     }
 
-    // --- обработчики событий ---
-    document.getElementById('searchInput').addEventListener('input', applyFilters);
-    document.getElementById('karmaFilter').addEventListener('change', applyFilters);
-    document.getElementById('enabledFilter').addEventListener('change', applyFilters);
-    document.getElementById('showOnlyRaids').addEventListener('change', applyFilters);
-
-    document.querySelectorAll('th[data-sort]').forEach(th => {
-      th.addEventListener('click', () => {
-        const key = th.dataset.sort;
-        sortTable(key);
+    // ---------- переключение вкладок ----------
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const tab = this.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        this.classList.add('active');
+        const source = dataSources[tab];
+        if (source.data.length === 0 && source.filtered.length === 0) {
+          loadData(tab);
+        } else {
+          renderTable(tab);
+          updateStats(tab);
+        }
       });
     });
 
-    // --- старт ---
-    loadData();
+    // ---------- подписка на фильтры ----------
+    document.querySelectorAll('.search-input, .karma-filter, .enabled-filter, .only-raids, .only-affordable, .mod-filter, .permission-filter, .only-enabled').forEach(el => {
+      const eventType = (el.tagName === 'INPUT' && el.type === 'checkbox') ? 'change' : 'input';
+      el.addEventListener(eventType, function() {
+        const tab = this.dataset.tab;
+        if (tab) applyFilters(tab);
+      });
+      if (el.tagName === 'SELECT') {
+        el.addEventListener('change', function() {
+          const tab = this.dataset.tab;
+          if (tab) applyFilters(tab);
+        });
+      }
+    });
+
+    // ---------- сортировка ----------
+    document.querySelectorAll('th[data-sort]').forEach(th => {
+      th.addEventListener('click', function() {
+        const tab = this.dataset.tab;
+        const key = this.dataset.sort;
+        const source = dataSources[tab];
+        if (!source.filtered.length) return;
+        const currentSort = source._sortKey;
+        const currentAsc = source._sortAsc;
+        if (currentSort === key) {
+          source._sortAsc = !currentAsc;
+        } else {
+          source._sortKey = key;
+          source._sortAsc = true;
+        }
+        const sortKey = source._sortKey;
+        const asc = source._sortAsc;
+        source.filtered.sort((a, b) => {
+          let valA, valB;
+          if (tab === 'store' && (key === 'baseCost')) {
+            valA = a.BaseCost ?? a.BasePrice ?? 0;
+            valB = b.BaseCost ?? b.BasePrice ?? 0;
+          } else if (tab === 'races' && (key === 'basePrice')) {
+            valA = a.BasePrice ?? 0;
+            valB = b.BasePrice ?? 0;
+          } else if (tab === 'races' && (key === 'displayName')) {
+            valA = (a.DisplayName || '').toLowerCase();
+            valB = (b.DisplayName || '').toLowerCase();
+          } else if (tab === 'races' && (key === 'ageRange')) {
+            const minA = a.MinAge ?? 0;
+            const maxA = a.MaxAge ?? 0;
+            const minB = b.MinAge ?? 0;
+            const maxB = b.MaxAge ?? 0;
+            valA = minA + maxA;
+            valB = minB + maxB;
+          } else if (tab === 'races' && (key === 'xenotypes')) {
+            valA = Object.keys(a.XenotypePrices || {}).length;
+            valB = Object.keys(b.XenotypePrices || {}).length;
+          } else {
+            valA = a[key] ?? '';
+            valB = b[key] ?? '';
+          }
+          if (typeof valA === 'string') valA = valA.toLowerCase();
+          if (typeof valB === 'string') valB = valB.toLowerCase();
+          if (valA < valB) return asc ? -1 : 1;
+          if (valA > valB) return asc ? 1 : -1;
+          return 0;
+        });
+        renderTable(tab);
+      });
+    });
+
+    // ---------- управление балансом ----------
+    document.getElementById('playerSelect').addEventListener('change', function() {
+      updateBalanceDisplay();
+      applyFiltersToAllTabs();
+    });
+
+    document.getElementById('setBalanceBtn').addEventListener('click', function() {
+      const start = parseFloat(document.getElementById('startBalance').value) || 0;
+      const rate = parseFloat(document.getElementById('ratePerMin').value) || 0;
+      const player = getCurrentPlayer();
+      balanceData[player].start = start;
+      balanceData[player].rate = rate;
+      balanceData[player].balance = start;
+      saveBalanceData();
+      updateBalanceDisplay();
+      applyFiltersToAllTabs();
+      showToast(`✅ Баланс установлен: ${start} очков, начисление ${rate} очков/мин`);
+    });
+
+    document.getElementById('addCoinsBtn').addEventListener('click', function() {
+      const current = getCurrentBalance();
+      setCurrentBalance(current + 100);
+      showToast('➕ Добавлено 100 очков');
+    });
+
+    document.getElementById('resetBalanceBtn').addEventListener('click', function() {
+      if (confirm('Сбросить баланс текущего игрока на 0?')) {
+        const player = getCurrentPlayer();
+        balanceData[player].balance = 0;
+        balanceData[player].start = 0;
+        balanceData[player].rate = 30;
+        document.getElementById('startBalance').value = 0;
+        document.getElementById('ratePerMin').value = 30;
+        saveBalanceData();
+        updateBalanceDisplay();
+        applyFiltersToAllTabs();
+        showToast('🔄 Баланс сброшен');
+      }
+    });
+
+    // ---------- инициализация ----------
+    function init() {
+      const player = getCurrentPlayer();
+      const data = balanceData[player];
+      document.getElementById('startBalance').value = data.start || 0;
+      document.getElementById('ratePerMin').value = data.rate || 30;
+      updateBalanceDisplay();
+      startAutoEarn();
+      loadData('events');
+    }
+
+    init();
   })();
 </script>
 </body>
