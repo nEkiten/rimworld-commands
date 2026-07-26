@@ -233,6 +233,8 @@
     .permission-everyone { background: #2d7d3a; color: #c8f0c0; }
     .permission-moderator { background: #b85a2a; color: #f5d0b0; }
     .permission-streamer { background: #7a4a9a; color: #e0c0f0; }
+    .xenotype-list { font-size: 0.8rem; color: #c0c0c0; }
+    .xenotype-item { display: inline-block; background: #2a2a3e; padding: 2px 8px; border-radius: 12px; margin: 2px; }
     @media (max-width: 768px) {
       .filters { flex-direction: column; align-items: stretch; }
       .filters input, .filters select { min-width: unset; width: 100%; }
@@ -286,6 +288,7 @@
     <button class="tab-btn" data-tab="weather">🌦️ Погода</button>
     <button class="tab-btn" data-tab="traits">🧬 Черты</button>
     <button class="tab-btn" data-tab="commands">📖 Команды</button>
+    <button class="tab-btn" data-tab="races">👥 Расы</button>
   </div>
 
   <!-- ============ Вкладка События ============ -->
@@ -440,6 +443,27 @@
       </table>
     </div>
   </div>
+
+  <!-- ============ Вкладка Расы ============ -->
+  <div id="tab-races" class="tab-content">
+    <div class="filters" id="filters-races">
+      <input type="text" class="search-input" placeholder="🔍 Поиск по расе или ксеногипу..." data-tab="races" />
+      <label><input type="checkbox" class="only-enabled" data-tab="races" /> Только включённые</label>
+      <span class="stats" id="stats-races">Загрузка...</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th data-sort="displayName" data-tab="races">Раса</th>
+          <th data-sort="basePrice" style="text-align:right;" data-tab="races">Баз. цена</th>
+          <th data-sort="ageRange" data-tab="races">Возраст</th>
+          <th data-sort="xenotypes" data-tab="races">Ксеногипы (цены)</th>
+          <th style="cursor:default;">Купить</th>
+        </tr></thead>
+        <tbody id="body-races"><tr><td colspan="5" class="loading">⏳ Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <div id="toast" class="toast">📋 Скопировано!</div>
@@ -512,7 +536,7 @@
 
     // ---------- Применение фильтров ко всем вкладкам ----------
     function applyFiltersToAllTabs() {
-      ['events', 'store', 'weather', 'traits', 'commands'].forEach(tab => {
+      ['events', 'store', 'weather', 'traits', 'commands', 'races'].forEach(tab => {
         applyFilters(tab);
       });
     }
@@ -546,7 +570,8 @@
       store: { file: 'store.json', data: [], filtered: [] },
       weather: { file: 'weather.json', data: [], filtered: [] },
       traits: { file: 'traits.json', data: [], filtered: [] },
-      commands: { file: 'commands.json', data: [], filtered: [] }
+      commands: { file: 'commands.json', data: [], filtered: [] },
+      races: { file: 'races.json', data: [], filtered: [] }
     };
 
     // ---------- рендеринг таблиц ----------
@@ -668,6 +693,32 @@
             <td><button class="copy-btn" data-command="${commandText}">📋 Копировать</button></td>
           </tr>`;
         });
+      } else if (tab === 'races') {
+        items.forEach(race => {
+          const displayName = race.DisplayName || race.DefName || 'Без названия';
+          const basePrice = race.BasePrice ?? 0;
+          const minAge = race.MinAge ?? '?';
+          const maxAge = race.MaxAge ?? '?';
+          const ageRange = `${minAge}–${maxAge}`;
+          const xenotypePrices = race.XenotypePrices || {};
+          const xenotypeList = Object.keys(xenotypePrices).map(x => {
+            const price = xenotypePrices[x];
+            const enabled = race.EnabledXenotypes && race.EnabledXenotypes[x] !== undefined ? race.EnabledXenotypes[x] : true;
+            return `<span class="xenotype-item">${x} ${price}🪙</span>`;
+          }).join(' ');
+          const command = `!buy Pawn`; // базовая команда покупки пешки
+          const canAfford = balance >= basePrice;
+          html += `<tr>
+            <td><strong>${displayName}</strong></td>
+            <td style="text-align:right;"><span class="price">${basePrice}</span></td>
+            <td>${ageRange}</td>
+            <td class="xenotype-list">${xenotypeList || '—'}</td>
+            <td>
+              <button class="copy-btn buy-btn" data-command="${command}" data-price="${basePrice}" ${canAfford ? '' : 'disabled'}>💰 Купить</button>
+              <button class="copy-btn" data-command="${command}">📋 Копировать</button>
+            </td>
+          </tr>`;
+        });
       }
 
       tbody.innerHTML = html;
@@ -719,6 +770,7 @@
       const onlyAffordableCheck = container.querySelector('.only-affordable');
       const modFilter = container.querySelector('.mod-filter');
       const permissionFilter = container.querySelector('.permission-filter');
+      const onlyEnabledCheck = container.querySelector('.only-enabled');
 
       const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
       const karma = karmaFilter ? karmaFilter.value : 'all';
@@ -727,17 +779,24 @@
       const onlyAffordable = onlyAffordableCheck ? onlyAffordableCheck.checked : false;
       const mod = modFilter ? modFilter.value : 'all';
       const permission = permissionFilter ? permissionFilter.value : 'all';
+      const onlyEnabled = onlyEnabledCheck ? onlyEnabledCheck.checked : false;
 
       const balance = getCurrentBalance();
 
       source.filtered = source.data.filter(item => {
         if (search) {
-          const label = (item.Label || item.CustomName || item.Name || '').toLowerCase();
+          const label = (item.Label || item.CustomName || item.Name || item.DisplayName || '').toLowerCase();
           const def = (item.DefName || '').toLowerCase();
           const cat = (item.CategoryName || item.Category || '').toLowerCase();
           const modSrc = (item.ModSource || item.Mod || '').toLowerCase();
           const desc = (item.CommandDescription || '').toLowerCase();
-          if (!label.includes(search) && !def.includes(search) && !cat.includes(search) && !modSrc.includes(search) && !desc.includes(search)) {
+          // для рас ищем ещё и по ксеногипам
+          let xenotypeMatch = false;
+          if (item.XenotypePrices) {
+            const xenotypes = Object.keys(item.XenotypePrices).join(' ').toLowerCase();
+            if (xenotypes.includes(search)) xenotypeMatch = true;
+          }
+          if (!label.includes(search) && !def.includes(search) && !cat.includes(search) && !modSrc.includes(search) && !desc.includes(search) && !xenotypeMatch) {
             return false;
           }
         }
@@ -750,6 +809,7 @@
         if (onlyRaids && !item.IsRaidIncident) return false;
         if (mod !== 'all' && (item.ModSource || 'Core') !== mod) return false;
         if (permission !== 'all' && (item.PermissionLevel || 'everyone') !== permission) return false;
+        if (onlyEnabled && !item.Enabled) return false;
         if (onlyAffordable) {
           let price = 0;
           if (tab === 'events') price = item.BaseCost ?? 0;
@@ -760,6 +820,8 @@
             const removePrice = item.RemovePrice != null ? item.RemovePrice : Infinity;
             const minPrice = Math.min(addPrice, removePrice);
             price = minPrice === Infinity ? 0 : minPrice;
+          } else if (tab === 'races') {
+            price = item.BasePrice ?? 0;
           } else {
             price = 0;
           }
@@ -790,6 +852,15 @@
               rawData = data;
             } else if (typeof data === 'object' && data !== null) {
               rawData = Object.values(data);
+            } else {
+              rawData = [];
+            }
+          } else if (tab === 'races') {
+            // для рас: если объект, берём значения (каждая раса)
+            if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+              rawData = Object.values(data);
+            } else if (Array.isArray(data)) {
+              rawData = data;
             } else {
               rawData = [];
             }
@@ -840,7 +911,7 @@
     });
 
     // ---------- подписка на фильтры ----------
-    document.querySelectorAll('.search-input, .karma-filter, .enabled-filter, .only-raids, .only-affordable, .mod-filter, .permission-filter').forEach(el => {
+    document.querySelectorAll('.search-input, .karma-filter, .enabled-filter, .only-raids, .only-affordable, .mod-filter, .permission-filter, .only-enabled').forEach(el => {
       const eventType = (el.tagName === 'INPUT' && el.type === 'checkbox') ? 'change' : 'input';
       el.addEventListener(eventType, function() {
         const tab = this.dataset.tab;
@@ -876,6 +947,22 @@
           if (tab === 'store' && (key === 'baseCost')) {
             valA = a.BaseCost ?? a.BasePrice ?? 0;
             valB = b.BaseCost ?? b.BasePrice ?? 0;
+          } else if (tab === 'races' && (key === 'basePrice')) {
+            valA = a.BasePrice ?? 0;
+            valB = b.BasePrice ?? 0;
+          } else if (tab === 'races' && (key === 'displayName')) {
+            valA = (a.DisplayName || '').toLowerCase();
+            valB = (b.DisplayName || '').toLowerCase();
+          } else if (tab === 'races' && (key === 'ageRange')) {
+            const minA = a.MinAge ?? 0;
+            const maxA = a.MaxAge ?? 0;
+            const minB = b.MinAge ?? 0;
+            const maxB = b.MaxAge ?? 0;
+            valA = minA + maxA;
+            valB = minB + maxB;
+          } else if (tab === 'races' && (key === 'xenotypes')) {
+            valA = Object.keys(a.XenotypePrices || {}).length;
+            valB = Object.keys(b.XenotypePrices || {}).length;
           } else {
             valA = a[key] ?? '';
             valB = b[key] ?? '';
