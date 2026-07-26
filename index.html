@@ -13,8 +13,59 @@
       padding: 20px;
     }
     .container { max-width: 1500px; margin: 0 auto; }
-    h1 { text-align: center; margin-bottom: 10px; font-weight: 300; letter-spacing: 1px; }
+    h1 { text-align: center; margin-bottom: 5px; font-weight: 300; letter-spacing: 1px; }
     .subtitle { text-align: center; color: #aaa; margin-bottom: 20px; font-size: 0.95rem; }
+
+    /* Панель баланса */
+    .balance-panel {
+      background: #2a2a3e;
+      border-radius: 12px;
+      padding: 15px 20px;
+      margin-bottom: 25px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 15px;
+      border: 1px solid #3a3a5a;
+    }
+    .balance-panel label {
+      font-size: 0.9rem;
+      color: #ccc;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .balance-panel input, .balance-panel select {
+      background: #3a3a52;
+      border: 1px solid #555;
+      color: #eee;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      width: 80px;
+    }
+    .balance-panel select { width: auto; }
+    .balance-display {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #f0e68c;
+      margin: 0 10px;
+    }
+    .balance-panel button {
+      background: #3a5a7a;
+      border: none;
+      color: #fff;
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: 0.2s;
+    }
+    .balance-panel button:hover { background: #4a7a9a; }
+    .balance-panel button.danger { background: #7a4a3a; }
+    .balance-panel button.danger:hover { background: #9a5a4a; }
+    .balance-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .balance-actions .hint { font-size: 0.8rem; color: #888; margin-left: 5px; }
 
     .tabs {
       display: flex;
@@ -148,6 +199,9 @@
     .copy-btn.copied { background: #2d7d3a; }
     .copy-btn.remove { background: #7a4a3a; }
     .copy-btn.remove:hover { background: #9a5a4a; }
+    .copy-btn.buy-btn { background: #2d7d3a; }
+    .copy-btn.buy-btn:hover { background: #3a9a4a; }
+    .copy-btn.buy-btn:disabled { background: #4a4a6a; color: #888; cursor: not-allowed; }
     .loading { text-align: center; padding: 50px; font-size: 1.2rem; color: #aaa; }
     .no-results { text-align: center; padding: 30px; color: #aaa; }
     .toast {
@@ -168,7 +222,7 @@
     }
     .toast.show { opacity: 1; }
     .error-msg { color: #f77; text-align: center; padding: 30px; }
-    .stats-detail { font-size: 0.8rem; color: #aaa; margin-top: 4px; }
+    .balance-panel .coin-icon { font-size: 1.2rem; margin-right: 4px; }
     @media (max-width: 768px) {
       .filters { flex-direction: column; align-items: stretch; }
       .filters input, .filters select { min-width: unset; width: 100%; }
@@ -176,14 +230,46 @@
       th, td { padding: 6px 4px; font-size: 0.75rem; }
       .copy-btn { padding: 2px 8px; font-size: 0.7rem; }
       .tab-btn { padding: 10px 16px; font-size: 0.9rem; }
+      .balance-panel { flex-direction: column; align-items: stretch; gap: 10px; }
+      .balance-panel input, .balance-panel select { width: 100%; }
+      .balance-display { text-align: center; }
     }
   </style>
 </head>
 <body>
 <div class="container">
   <h1>🎮 RimWorld · Команды и цены</h1>
-  <p class="subtitle">Нажмите на кнопку, чтобы скопировать команду для чата</p>
+  <p class="subtitle">Управляйте балансом и покупайте события в один клик</p>
 
+  <!-- Панель баланса -->
+  <div class="balance-panel">
+    <label>
+      Игрок:
+      <select id="playerSelect">
+        <option value="player1">Вы</option>
+        <option value="player2">Друг</option>
+      </select>
+    </label>
+    <div>
+      <span class="coin-icon">🪙</span>
+      <span class="balance-display" id="balanceDisplay">0</span>
+    </div>
+    <div class="balance-actions">
+      <label>
+        Нач. баланс:
+        <input type="number" id="startBalance" value="0" step="10" min="0" />
+      </label>
+      <label>
+        Очков/мин:
+        <input type="number" id="ratePerMin" value="30" step="5" min="0" />
+      </label>
+      <button id="setBalanceBtn">Установить</button>
+      <button id="addCoinsBtn">➕ Добавить 100</button>
+      <button id="resetBalanceBtn" class="danger">🔄 Сброс</button>
+    </div>
+  </div>
+
+  <!-- Вкладки -->
   <div class="tabs" id="tabHeaders">
     <button class="tab-btn active" data-tab="events">⚔️ События</button>
     <button class="tab-btn" data-tab="store">🛒 Магазин</button>
@@ -208,6 +294,7 @@
         <option value="false">❌ Отключено</option>
       </select>
       <label><input type="checkbox" class="only-raids" data-tab="events" /> Только рейды</label>
+      <label><input type="checkbox" class="only-affordable" data-tab="events" /> Только доступные</label>
       <span class="stats" id="stats-events">Загрузка...</span>
     </div>
     <div class="table-wrapper">
@@ -220,7 +307,7 @@
           <th data-sort="modSource" data-tab="events">Источник</th>
           <th data-sort="enabled" data-tab="events">Статус</th>
           <th data-sort="isRaid" data-tab="events">Рейд</th>
-          <th style="cursor:default;">Команда</th>
+          <th style="cursor:default;">Купить</th>
         </tr></thead>
         <tbody id="body-events"><tr><td colspan="8" class="loading">⏳ Загрузка...</td></tr></tbody>
       </table>
@@ -237,6 +324,7 @@
         <option value="Neutral">⚪ Neutral</option>
         <option value="Bad">⚠️ Bad</option>
       </select>
+      <label><input type="checkbox" class="only-affordable" data-tab="store" /> Только доступные</label>
       <span class="stats" id="stats-store">Загрузка...</span>
     </div>
     <div class="table-wrapper">
@@ -246,7 +334,7 @@
           <th data-sort="baseCost" style="text-align:right;" data-tab="store">Цена</th>
           <th data-sort="karmaType" data-tab="store">Карма</th>
           <th data-sort="category" data-tab="store">Категория</th>
-          <th style="cursor:default;">Команда</th>
+          <th style="cursor:default;">Купить</th>
         </tr></thead>
         <tbody id="body-store"><tr><td colspan="5" class="loading">⏳ Загрузка...</td></tr></tbody>
       </table>
@@ -306,6 +394,78 @@
 
 <script>
   (function() {
+    // ---------- Баланс (localStorage) ----------
+    const STORAGE_KEY = 'rimworld_balance_data';
+    let balanceData = loadBalanceData();
+
+    function loadBalanceData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // убедимся, что есть оба игрока
+          if (!parsed.player1) parsed.player1 = { balance: 0, start: 0, rate: 30 };
+          if (!parsed.player2) parsed.player2 = { balance: 0, start: 0, rate: 30 };
+          return parsed;
+        }
+      } catch (e) {}
+      return {
+        player1: { balance: 0, start: 0, rate: 30 },
+        player2: { balance: 0, start: 0, rate: 30 }
+      };
+    }
+
+    function saveBalanceData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(balanceData));
+    }
+
+    function getCurrentPlayer() {
+      return document.getElementById('playerSelect').value;
+    }
+
+    function getCurrentBalance() {
+      const player = getCurrentPlayer();
+      return balanceData[player].balance || 0;
+    }
+
+    function setCurrentBalance(newBalance) {
+      const player = getCurrentPlayer();
+      balanceData[player].balance = Math.max(0, Math.round(newBalance));
+      saveBalanceData();
+      updateBalanceDisplay();
+      applyFiltersToAllTabs(); // обновить фильтры доступности
+    }
+
+    function updateBalanceDisplay() {
+      const bal = getCurrentBalance();
+      document.getElementById('balanceDisplay').textContent = bal;
+    }
+
+    // ---------- Начисление очков ----------
+    let intervalId = null;
+
+    function startAutoEarn() {
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        const player = getCurrentPlayer();
+        const rate = balanceData[player].rate || 0;
+        if (rate > 0) {
+          const current = balanceData[player].balance || 0;
+          balanceData[player].balance = current + rate;
+          saveBalanceData();
+          updateBalanceDisplay();
+          applyFiltersToAllTabs();
+        }
+      }, 60000); // каждую минуту
+    }
+
+    // ---------- Применение фильтров ко всем вкладкам ----------
+    function applyFiltersToAllTabs() {
+      ['events', 'store', 'weather', 'traits'].forEach(tab => {
+        applyFilters(tab);
+      });
+    }
+
     // ---------- утилиты ----------
     function showToast(text = '📋 Скопировано!') {
       const toast = document.getElementById('toast');
@@ -350,9 +510,12 @@
         return;
       }
 
+      const balance = getCurrentBalance();
       let html = '';
       if (tab === 'events') {
         items.forEach(inc => {
+          const price = inc.BaseCost ?? 0;
+          const canAfford = balance >= price;
           const karmaClass = `karma-${inc.KarmaType || 'Neutral'}`;
           const enabledClass = inc.Enabled ? 'enabled-true' : 'enabled-false';
           const enabledText = inc.Enabled ? '✅ Да' : '❌ Нет';
@@ -360,33 +523,36 @@
           const command = `!buy ${inc.DefName}`;
           html += `<tr>
             <td><strong>${inc.Label || inc.DefName}</strong></td>
-            <td style="text-align:right;"><span class="price">${inc.BaseCost ?? 0}</span></td>
+            <td style="text-align:right;"><span class="price">${price}</span></td>
             <td><span class="karma-badge ${karmaClass}">${inc.KarmaType || 'Neutral'}</span></td>
             <td><span class="category-badge">${inc.CategoryName || '—'}</span></td>
             <td class="mod-source">${inc.ModSource || 'Core'}</td>
             <td class="${enabledClass}">${enabledText}</td>
             <td>${raidIcon}</td>
-            <td><button class="copy-btn" data-command="${command}">📋 Копировать</button></td>
+            <td>
+              <button class="copy-btn buy-btn" data-command="${command}" data-price="${price}" ${canAfford ? '' : 'disabled'}>💰 Купить</button>
+              <button class="copy-btn" data-command="${command}">📋 Копировать</button>
+            </td>
           </tr>`;
         });
       } else if (tab === 'store') {
         items.forEach(item => {
-          // Извлекаем цену: ищем BaseCost или BasePrice
-          const cost = item.BaseCost ?? item.BasePrice ?? 0;
-          // Название: Label или CustomName или DefName
+          const price = item.BaseCost ?? item.BasePrice ?? 0;
+          const canAfford = balance >= price;
           const label = item.Label || item.CustomName || item.DefName || 'Без названия';
-          // Карма: если нет, ставим Neutral
           const karma = item.KarmaType || 'Neutral';
           const karmaClass = `karma-${karma}`;
-          // Категория: Category или '—'
           const category = item.Category || '—';
           const command = `!buy ${item.DefName}`;
           html += `<tr>
             <td><strong>${label}</strong></td>
-            <td style="text-align:right;"><span class="price">${cost}</span></td>
+            <td style="text-align:right;"><span class="price">${price}</span></td>
             <td><span class="karma-badge ${karmaClass}">${karma}</span></td>
             <td><span class="category-badge">${category}</span></td>
-            <td><button class="copy-btn" data-command="${command}">📋 Копировать</button></td>
+            <td>
+              <button class="copy-btn buy-btn" data-command="${command}" data-price="${price}" ${canAfford ? '' : 'disabled'}>💰 Купить</button>
+              <button class="copy-btn" data-command="${command}">📋 Копировать</button>
+            </td>
           </tr>`;
         });
       } else if (tab === 'weather') {
@@ -405,6 +571,8 @@
           const removePrice = t.RemovePrice != null ? t.RemovePrice : '—';
           const addCmd = `!addtrait ${t.DefName}`;
           const removeCmd = `!removetrait ${t.DefName}`;
+          const canAdd = (addPrice === '—') ? true : (balance >= addPrice);
+          const canRemove = (removePrice === '—') ? true : (balance >= removePrice);
           html += `<tr>
             <td><strong>${t.Name || t.DefName}</strong></td>
             <td style="font-size:0.85rem; color:#c0c0c0;">${statsText}</td>
@@ -412,8 +580,9 @@
             <td style="text-align:right;"><span class="price">${removePrice}</span></td>
             <td class="mod-source">${t.ModSource || 'Core'}</td>
             <td>
-              <button class="copy-btn" data-command="${addCmd}">➕ Добавить</button>
-              <button class="copy-btn remove" data-command="${removeCmd}">➖ Удалить</button>
+              <button class="copy-btn buy-btn" data-command="${addCmd}" data-price="${addPrice}" ${canAdd ? '' : 'disabled'}>➕ Добавить</button>
+              <button class="copy-btn buy-btn remove" data-command="${removeCmd}" data-price="${removePrice}" ${canRemove ? '' : 'disabled'}>➖ Удалить</button>
+              <button class="copy-btn" data-command="${addCmd}">📋 Копировать</button>
             </td>
           </tr>`;
         });
@@ -422,14 +591,32 @@
       tbody.innerHTML = html;
       statsSpan.textContent = `📊 ${items.length} элементов`;
 
-      // обработчики кнопок
+      // обработчики для всех кнопок
       document.querySelectorAll(`#body-${tab} .copy-btn`).forEach(btn => {
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
           const command = this.dataset.command;
-          copyToClipboard(command);
-          this.classList.add('copied');
-          setTimeout(() => this.classList.remove('copied'), 1000);
+          const price = parseFloat(this.dataset.price);
+          // если это кнопка "Купить" (buy-btn) и цена числовая и не disabled
+          if (this.classList.contains('buy-btn') && !isNaN(price) && !this.disabled) {
+            const currentBalance = getCurrentBalance();
+            if (currentBalance >= price) {
+              setCurrentBalance(currentBalance - price);
+              // копируем команду
+              copyToClipboard(command);
+              // перерисовываем таблицу, чтобы обновить доступность кнопок
+              renderTable(tab);
+              // также обновить фильтры, если включен "только доступные"
+              applyFilters(tab);
+            } else {
+              showToast('❌ Недостаточно очков!');
+            }
+          } else if (!this.classList.contains('buy-btn')) {
+            // обычная кнопка копирования
+            copyToClipboard(command);
+            this.classList.add('copied');
+            setTimeout(() => this.classList.remove('copied'), 1000);
+          }
         });
       });
     }
@@ -452,13 +639,17 @@
       const karmaFilter = container.querySelector('.karma-filter');
       const enabledFilter = container.querySelector('.enabled-filter');
       const onlyRaidsCheck = container.querySelector('.only-raids');
+      const onlyAffordableCheck = container.querySelector('.only-affordable');
       const modFilter = container.querySelector('.mod-filter');
 
       const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
       const karma = karmaFilter ? karmaFilter.value : 'all';
       const enabled = enabledFilter ? enabledFilter.value : 'all';
       const onlyRaids = onlyRaidsCheck ? onlyRaidsCheck.checked : false;
+      const onlyAffordable = onlyAffordableCheck ? onlyAffordableCheck.checked : false;
       const mod = modFilter ? modFilter.value : 'all';
+
+      const balance = getCurrentBalance();
 
       source.filtered = source.data.filter(item => {
         // поиск
@@ -483,6 +674,22 @@
         if (onlyRaids && !item.IsRaidIncident) return false;
         // фильтр по источнику (для черт)
         if (mod !== 'all' && (item.ModSource || 'Core') !== mod) return false;
+        // только доступные по балансу
+        if (onlyAffordable) {
+          let price = 0;
+          if (tab === 'events') price = item.BaseCost ?? 0;
+          else if (tab === 'store') price = item.BaseCost ?? item.BasePrice ?? 0;
+          else if (tab === 'traits') {
+            // для черт проверяем и добавление и удаление (если есть цены)
+            const addPrice = item.AddPrice != null ? item.AddPrice : Infinity;
+            const removePrice = item.RemovePrice != null ? item.RemovePrice : Infinity;
+            const minPrice = Math.min(addPrice, removePrice);
+            price = minPrice === Infinity ? 0 : minPrice;
+          } else {
+            price = 0; // для погоды не применяем
+          }
+          if (balance < price) return false;
+        }
         return true;
       });
 
@@ -501,9 +708,7 @@
         })
         .then(data => {
           let rawData = [];
-          // Определяем структуру
           if (tab === 'store') {
-            // Если data — объект с ключом "items", берём его значение
             if (data && typeof data === 'object' && data.items) {
               rawData = Object.values(data.items);
             } else if (Array.isArray(data)) {
@@ -514,7 +719,6 @@
               rawData = [];
             }
           } else {
-            // Для остальных вкладок: если массив — берём как есть, иначе значения объекта
             if (Array.isArray(data)) {
               rawData = data;
             } else if (typeof data === 'object' && data !== null) {
@@ -526,7 +730,6 @@
 
           source.data = rawData.map(item => ({
             ...item,
-            // служебные поля для единообразия
             isRaid: item.IsRaidIncident || false,
             isEnabled: item.Enabled !== undefined ? item.Enabled : true,
           }));
@@ -562,16 +765,16 @@
     });
 
     // ---------- подписка на фильтры ----------
-    document.querySelectorAll('.search-input, .karma-filter, .enabled-filter, .only-raids, .mod-filter').forEach(el => {
+    document.querySelectorAll('.search-input, .karma-filter, .enabled-filter, .only-raids, .only-affordable, .mod-filter').forEach(el => {
       const eventType = (el.tagName === 'INPUT' && el.type === 'checkbox') ? 'change' : 'input';
       el.addEventListener(eventType, function() {
         const tab = this.dataset.tab;
-        applyFilters(tab);
+        if (tab) applyFilters(tab);
       });
       if (el.tagName === 'SELECT') {
         el.addEventListener('change', function() {
           const tab = this.dataset.tab;
-          applyFilters(tab);
+          if (tab) applyFilters(tab);
         });
       }
     });
@@ -594,7 +797,6 @@
         const sortKey = source._sortKey;
         const asc = source._sortAsc;
         source.filtered.sort((a, b) => {
-          // Для цены в магазине используем BaseCost или BasePrice
           let valA, valB;
           if (tab === 'store' && (key === 'baseCost')) {
             valA = a.BaseCost ?? a.BasePrice ?? 0;
@@ -613,9 +815,59 @@
       });
     });
 
+    // ---------- управление балансом ----------
+    document.getElementById('playerSelect').addEventListener('change', function() {
+      updateBalanceDisplay();
+      applyFiltersToAllTabs();
+    });
+
+    document.getElementById('setBalanceBtn').addEventListener('click', function() {
+      const start = parseFloat(document.getElementById('startBalance').value) || 0;
+      const rate = parseFloat(document.getElementById('ratePerMin').value) || 0;
+      const player = getCurrentPlayer();
+      balanceData[player].start = start;
+      balanceData[player].rate = rate;
+      balanceData[player].balance = start;
+      saveBalanceData();
+      updateBalanceDisplay();
+      applyFiltersToAllTabs();
+      showToast(`✅ Баланс установлен: ${start} очков, начисление ${rate} очков/мин`);
+    });
+
+    document.getElementById('addCoinsBtn').addEventListener('click', function() {
+      const current = getCurrentBalance();
+      setCurrentBalance(current + 100);
+      showToast('➕ Добавлено 100 очков');
+    });
+
+    document.getElementById('resetBalanceBtn').addEventListener('click', function() {
+      if (confirm('Сбросить баланс текущего игрока на 0?')) {
+        const player = getCurrentPlayer();
+        balanceData[player].balance = 0;
+        balanceData[player].start = 0;
+        balanceData[player].rate = 30;
+        document.getElementById('startBalance').value = 0;
+        document.getElementById('ratePerMin').value = 30;
+        saveBalanceData();
+        updateBalanceDisplay();
+        applyFiltersToAllTabs();
+        showToast('🔄 Баланс сброшен');
+      }
+    });
+
     // ---------- инициализация ----------
-    loadData('events');
-    // остальные загрузятся при переключении
+    function init() {
+      // загружаем данные из localStorage в поля
+      const player = getCurrentPlayer();
+      const data = balanceData[player];
+      document.getElementById('startBalance').value = data.start || 0;
+      document.getElementById('ratePerMin').value = data.rate || 30;
+      updateBalanceDisplay();
+      startAutoEarn();
+      loadData('events');
+    }
+
+    init();
   })();
 </script>
 </body>
